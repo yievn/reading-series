@@ -1,0 +1,19 @@
+{
+  "name": "@vue/router-docs",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "docs": "vitepress dev .",
+    "docs:api": "node run-typedoc.mjs",
+    "docs:compare-to-translate": "node compare-to-translate.mjs",
+    "docs:translation-status": "node generate-translation-status.mjs",
+    "docs:build": "vitepress build .",
+    "docs:preview": "vitepress preview ."
+  },
+  "dependencies": {
+    "simple-git": "^3.18.0",
+    "vitepress": "1.0.0-rc.35",
+    "vue-router": "workspace:*"
+  }
+}

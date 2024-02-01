@@ -1,0 +1,24 @@
+{
+  "name": "@vue/router-playground",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "play": "vite",
+    "build": "vite build",
+    "types": "vue-tsc --noEmit",
+    "preview": "vite preview --port 4173"
+  },
+  "dependencies": {
+    "vue": "^3.3.11"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "@vitejs/plugin-vue": "^4.5.2",
+    "@vue/compiler-sfc": "^3.3.11",
+    "@vue/tsconfig": "^0.4.0",
+    "typescript": "~5.3.3",
+    "vite": "^5.0.7",
+    "vue-router": "workspace:*",
+    "vue-tsc": "^1.8.25"
+  }
+}
