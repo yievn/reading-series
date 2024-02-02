@@ -20,8 +20,9 @@ export type FormLabelWidthContext = ReturnType<typeof useFormLabelWidth>
 export interface FormItemRule extends RuleItem {
   trigger?: Arrayable<string>
 }
-
+/**原始类型 */
 type Primitive = null | undefined | string | number | boolean | symbol | bigint
+/**浏览器内置对象 */
 type BrowserNativeObject = Date | FileList | File | Blob | RegExp
 /**
  * Check whether it is tuple
@@ -31,6 +32,8 @@ type BrowserNativeObject = Date | FileList | File | Blob | RegExp
  * @example
  * IsTuple<[1, 2, 3]> => true
  * IsTuple<Array[number]> => false
+ * 判断语句检查是否 number 类型可以被赋值给数组的长度。
+ * 如果数组的长度可以被赋值为 number 类型，说明它不是元组，因为元组的长度是固定的。
  */
 type IsTuple<T extends ReadonlyArray<any>> = number extends T['length']
   ? false

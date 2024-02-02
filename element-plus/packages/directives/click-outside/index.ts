@@ -21,6 +21,7 @@ let startClick: MouseEvent
 
 if (isClient) {
   document.addEventListener('mousedown', (e: MouseEvent) => (startClick = e))
+  /**监听鼠标点击时放开事件，执行handler */
   document.addEventListener('mouseup', (e: MouseEvent) => {
     for (const handlers of nodeList.values()) {
       for (const { documentHandler } of handlers) {
@@ -92,7 +93,7 @@ const ClickOutside: ObjectDirective = {
     if (!nodeList.has(el)) {
       nodeList.set(el, [])
     }
-
+    /**更新el的handles */
     const handlers = nodeList.get(el)!
     const oldHandlerIndex = handlers.findIndex(
       (item) => item.bindingFn === binding.oldValue
