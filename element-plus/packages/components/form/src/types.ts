@@ -41,13 +41,18 @@ type IsTuple<T extends ReadonlyArray<any>> = number extends T['length']
 /**
  * Array method key
  *
- * 数组方法键
+ * 获取数组的属性和方法的键联合类型
  */
 type ArrayMethodKey = keyof any[]
 /**
  * Tuple index key
  *
  * 元组下标键
+ * 
+ * Exclude<keyof T, ArrayMethodKey>
+ * 
+ * keyof T 获取T类型的属性（下标）和方法联合类型
+ * Exclude 从T的下标和方法联合类型中排除掉数组的属性和方法的键类型，剩下的就是元组却确切的下标
  *
  * @example
  * TupleKey<[1, 2, 3]> => '0' | '1' | '2'
@@ -63,6 +68,17 @@ type ArrayKey = number
  * Helper type for recursively constructing paths through a type
  *
  * 用于通过一个类型递归构建路径的辅助类型
+ * 
+ * type User = {
+      id: number;
+      name: string;
+      address: {
+        street: string;
+        city: string;
+      };
+    };
+    type UserPath = PathImpl<'user', User>;
+    UserPath will be 'user' | 'user.id' | 'user.name' | 'user.address' | 'user.address.street' | 'user.address.city'
  */
 type PathImpl<K extends string | number, V> = V extends
   | Primitive
@@ -76,12 +92,29 @@ type PathImpl<K extends string | number, V> = V extends
  *
  * @see {@link FieldPath}
  */
+/**
+ * type ExampleType = {
+      1: number;
+      a: number;
+      b: string;
+      c: { d: number; e: string };
+      f: [{ value: string }];
+      g: { value: string }[];
+      h: Date;
+      i: FileList;
+      j: File;
+      k: Blob;
+      l: RegExp;
+    };
+    type ExamplePath = Path<ExampleType>;
+    // ExamplePath will be '1' | 'a' | 'b' | 'c' | 'f' | 'g' | 'c.d' | 'c.e' | 'f.0' | 'f.0.value' | 'g.number' | 'g.number.value' | 'h' | 'i' | 'j' | 'k' | 'l'
+ */
 type Path<T> = T extends ReadonlyArray<infer V>
   ? IsTuple<T> extends true
     ? {
         [K in TupleKey<T>]-?: PathImpl<Exclude<K, symbol>, T[K]>
-      }[TupleKey<T>] // tuple
-    : PathImpl<ArrayKey, V> // array
+      }[TupleKey<T>] // tuple 是元组
+    : PathImpl<ArrayKey, V> // array 是数组
   : {
       [K in keyof T]-?: PathImpl<Exclude<K, symbol>, T[K]>
     }[keyof T] // object
@@ -102,12 +135,14 @@ export type FormRules<
     Arrayable<FormItemRule>
   >
 >
-
+/**校验结果 */
 export type FormValidationResult = Promise<boolean>
+/**校验回调 */
 export type FormValidateCallback = (
   isValid: boolean,
   invalidFields?: ValidateFieldsError
 ) => void
+/**校验失败 */
 export interface FormValidateFailure {
   errors: ValidateError[] | null
   fields: ValidateFieldsError
