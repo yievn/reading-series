@@ -337,6 +337,7 @@ class Schema {
     return rule.type || 'string';
   }
 
+
   getValidationMethod(rule: InternalRuleItem) {
     if (typeof rule.validator === 'function') {
       return rule.validator;
