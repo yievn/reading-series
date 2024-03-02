@@ -28,10 +28,25 @@ var Reflect;
         var hasOwn = Object.prototype.hasOwnProperty;
         // feature test for Symbol support
         var supportsSymbol = typeof Symbol === "function";
+        /**
+         * 对象的Symbol.toPrimitive（本身也是symbol值）属性，
+         * 指向一个方法，该对象被转为原始类型的值时，会调用这个方法，返回该对象
+         * 对应的原始类型值
+         */
         var toPrimitiveSymbol = supportsSymbol && typeof Symbol.toPrimitive !== "undefined" ? Symbol.toPrimitive : "@@toPrimitive";
+        /**
+         * 对象的Symbol.iterator属性，指向该对象的默认遍历器方法
+         * 重新实现Symbol.iterator方法，会修改对象默认的遍历器方法
+         */
         var iteratorSymbol = supportsSymbol && typeof Symbol.iterator !== "undefined" ? Symbol.iterator : "@@iterator";
+        //是否支持Object.create
         var supportsCreate = typeof Object.create === "function"; // feature test for Object.create support
+
         var supportsProto = { __proto__: [] } instanceof Array; // feature test for __proto__ support
+        /**是否降级
+         * 这是为了兼容性考虑，在一些旧的JavaScript环境中，可能不支持最新的标准方法，为了
+         * 确保在这些环境中能够正常运行，采用一些降级处理
+         */
         var downLevel = !supportsCreate && !supportsProto;
         var HashMap = {
             // create an object in dictionary mode (a.k.a. "slow" mode in v8)
@@ -41,20 +56,23 @@ var Reflect;
                     ? function () { return MakeDictionary({ __proto__: null }); }
                     : function () { return MakeDictionary({}); },
             has: downLevel
-                ? function (map, key) { return hasOwn.call(map, key); }
-                : function (map, key) { return key in map; },
+                ? function (map, key) { return hasOwn.call(map, key); } // 不受原型链影响
+                : function (map, key) { return key in map; }, // 受原型链影响
             get: downLevel
                 ? function (map, key) { return hasOwn.call(map, key) ? map[key] : undefined; }
                 : function (map, key) { return map[key]; },
         };
         // Load global or shim versions of Map, Set, and WeakMap
+        // Function.prototype
         var functionPrototype = Object.getPrototypeOf(Function);
+        // 是否使用map相关补丁
         var usePolyfill = typeof process === "object" && process["env" + ""] && process["env" + ""]["REFLECT_METADATA_USE_MAP_POLYFILL"] === "true";
         var _Map = !usePolyfill && typeof Map === "function" && typeof Map.prototype.entries === "function" ? Map : CreateMapPolyfill();
         var _Set = !usePolyfill && typeof Set === "function" && typeof Set.prototype.entries === "function" ? Set : CreateSetPolyfill();
         var _WeakMap = !usePolyfill && typeof WeakMap === "function" ? WeakMap : CreateWeakMapPolyfill();
         // [[Metadata]] internal slot
         // https://rbuckton.github.io/reflect-metadata/#ordinary-object-internal-methods-and-internal-slots
+        /**元数据映射 */
         var Metadata = new _WeakMap();
         /**
          * Applies a set of decorators to a property of a target object.
@@ -95,20 +113,23 @@ var Reflect;
          *             Object.getOwnPropertyDescriptor(Example.prototype, "method")));
          *
          */
+        // 装饰器补丁
         function decorate(decorators, target, propertyKey, attributes) {
+            /**propertyKey存在 */
             if (!IsUndefined(propertyKey)) {
-                if (!IsArray(decorators))
+                if (!IsArray(decorators)) // decorators必须是数组
                     throw new TypeError();
-                if (!IsObject(target))
+                if (!IsObject(target)) // target必须是对象
                     throw new TypeError();
+                /** attributes必须是对象或者undefined或者null*/
                 if (!IsObject(attributes) && !IsUndefined(attributes) && !IsNull(attributes))
                     throw new TypeError();
-                if (IsNull(attributes))
+                if (IsNull(attributes)) // attributes为null
                     attributes = undefined;
                 propertyKey = ToPropertyKey(propertyKey);
                 return DecorateProperty(decorators, target, propertyKey, attributes);
             }
-            else {
+            else { /**类修饰器 */
                 if (!IsArray(decorators))
                     throw new TypeError();
                 if (!IsConstructor(target))
@@ -118,9 +139,9 @@ var Reflect;
         }
         exporter("decorate", decorate);
         // 4.1.2 Reflect.metadata(metadataKey, metadataValue)
-        // https://rbuckton.github.io/reflect-metadata/#reflect.metadata
         /**
          * A default metadata decorator factory that can be used on a class, class member, or parameter.
+         * 一个可以应用在类、类成员或者参数上的默认元数据修饰器工厂函数
          * @param metadataKey The key for the metadata entry.
          * @param metadataValue The value for the metadata entry.
          * @returns A decorator function.
@@ -159,12 +180,26 @@ var Reflect;
          *     }
          *
          */
+        /**返回一个定义元数据的修饰器 */
+        /**
+         * target = { 
+         *   ...
+         *   [rootKey]: {
+         *      [_key]: { // targetMetadata
+         *          [propertyKey]: { // metadataMap
+         *             [metadataKey]: metadataValue
+         *          }
+         *      }
+         *   }
+         * }
+         */
         function metadata(metadataKey, metadataValue) {
             function decorator(target, propertyKey) {
-                if (!IsObject(target))
+                if (!IsObject(target)) // target必须为对象
                     throw new TypeError();
-                if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey))
+                if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey)) // propertyKey存在但是非字符串或者symbol类型
                     throw new TypeError();
+                    
                 OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
             }
             return decorator;
@@ -521,22 +556,43 @@ var Reflect;
             return true;
         }
         exporter("deleteMetadata", deleteMetadata);
+        /**
+         * 一般用于类构造函数修饰器
+         * @param {*} decorators 修饰器函数数组
+         * @param {*} target 为构造函数（类）
+         * @returns 
+         */
         function DecorateConstructor(decorators, target) {
             for (var i = decorators.length - 1; i >= 0; --i) {
                 var decorator = decorators[i];
                 var decorated = decorator(target);
+                /**decorated不是undefined和null */
                 if (!IsUndefined(decorated) && !IsNull(decorated)) {
+                    /**返回值必须是构造函数（类） */
                     if (!IsConstructor(decorated))
                         throw new TypeError();
+                    /**将当前装饰器的返回值decorated赋给target，作为下一个装饰器的参数传入 */
                     target = decorated;
                 }
             }
             return target;
         }
+        /**
+         * 一般用于除类修饰器之外的方法、属性、参数修饰器
+         * @param {*} decorators 
+         * @param {*} target 
+         * @param {*} propertyKey 
+         * @param {*} descriptor 
+         * @returns 
+         * 
+         * 对于DecorateProperty中的decorators，使用的都是相同的target和propertyKey，但是
+         * descriptor可以做出修改
+         */
         function DecorateProperty(decorators, target, propertyKey, descriptor) {
             for (var i = decorators.length - 1; i >= 0; --i) {
                 var decorator = decorators[i];
                 var decorated = decorator(target, propertyKey, descriptor);
+                /**decorated必须存在并且是对象，作为新的描述对象 */
                 if (!IsUndefined(decorated) && !IsNull(decorated)) {
                     if (!IsObject(decorated))
                         throw new TypeError();
@@ -545,14 +601,43 @@ var Reflect;
             }
             return descriptor;
         }
+        /**
+         * 
+         * @param {object or function} O 对象
+         * @param {symbol or string } P 属性
+         * @param {*} Create 是否在获取不到map时创建
+         * @returns 返回属性P的hash表
+         * polyfill:
+         * O = { 
+         *   ...
+         *   [rootKey]: {
+         *      [_key]: { // targetMetadata
+         *          [P1]: { // metadataMap
+         *             ...
+         *          },
+         *          [P2]: { ... }
+         *      }
+         *   }
+         * }
+         * 
+         * ooriginal Map:
+         * {
+         *     [O]: {
+         *          [P]: { ... }
+         *     }
+         * }
+         */
         function GetOrCreateMetadataMap(O, P, Create) {
             var targetMetadata = Metadata.get(O);
+            /**targetMetadata不存在 */
             if (IsUndefined(targetMetadata)) {
                 if (!Create)
                     return undefined;
+                // 创建一个hash表并放置在，用于存储元数据
                 targetMetadata = new _Map();
                 Metadata.set(O, targetMetadata);
             }
+            // 元数据hash表
             var metadataMap = targetMetadata.get(P);
             if (IsUndefined(metadataMap)) {
                 if (!Create)
@@ -565,6 +650,7 @@ var Reflect;
         // 3.1.1.1 OrdinaryHasMetadata(MetadataKey, O, P)
         // https://rbuckton.github.io/reflect-metadata/#ordinaryhasmetadata
         function OrdinaryHasMetadata(MetadataKey, O, P) {
+            /**属性P是否存在元数据 */
             var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
             if (hasOwn)
                 return true;
@@ -573,13 +659,13 @@ var Reflect;
                 return OrdinaryHasMetadata(MetadataKey, parent, P);
             return false;
         }
-        // 3.1.2.1 OrdinaryHasOwnMetadata(MetadataKey, O, P)
-        // https://rbuckton.github.io/reflect-metadata/#ordinaryhasownmetadata
+        // MetadataKey是否已在属性P的metadataMap中
         function OrdinaryHasOwnMetadata(MetadataKey, O, P) {
+            /**获取属性P的metadataMap */
             var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
-            if (IsUndefined(metadataMap))
+            if (IsUndefined(metadataMap)) // 不存在返回false
                 return false;
-            return ToBoolean(metadataMap.has(MetadataKey));
+            return ToBoolean(metadataMap.has(MetadataKey)); 
         }
         // 3.1.3.1 OrdinaryGetMetadata(MetadataKey, O, P)
         // https://rbuckton.github.io/reflect-metadata/#ordinarygetmetadata
@@ -592,8 +678,7 @@ var Reflect;
                 return OrdinaryGetMetadata(MetadataKey, parent, P);
             return undefined;
         }
-        // 3.1.4.1 OrdinaryGetOwnMetadata(MetadataKey, O, P)
-        // https://rbuckton.github.io/reflect-metadata/#ordinarygetownmetadata
+        // 获取在
         function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
             var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
             if (IsUndefined(metadataMap))
@@ -669,9 +754,9 @@ var Reflect;
                 k++;
             }
         }
-        // 6 ECMAScript Data Typ0es and Values
-        // https://tc39.github.io/ecma262/#sec-ecmascript-data-types-and-values
+        // 返回类型标志 
         function Type(x) {
+            /**是null的话直接返回1 */
             if (x === null)
                 return 1 /* Null */;
             switch (typeof x) {
@@ -684,31 +769,25 @@ var Reflect;
                 default: return 6 /* Object */;
             }
         }
-        // 6.1.1 The Undefined Type
-        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-undefined-type
+        // 是否为undefined
         function IsUndefined(x) {
             return x === undefined;
         }
-        // 6.1.2 The Null Type
-        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-null-type
+        // 是否为null
         function IsNull(x) {
             return x === null;
         }
-        // 6.1.5 The Symbol Type
-        // https://tc39.github.io/ecma262/#sec-ecmascript-language-types-symbol-type
+        // 是否为symbol类型
         function IsSymbol(x) {
             return typeof x === "symbol";
         }
-        // 6.1.7 The Object Type
-        // https://tc39.github.io/ecma262/#sec-object-type
+        // 是否为对象
         function IsObject(x) {
             return typeof x === "object" ? x !== null : typeof x === "function";
         }
-        // 7.1 Type Conversion
-        // https://tc39.github.io/ecma262/#sec-type-conversion
-        // 7.1.1 ToPrimitive(input [, PreferredType])
-        // https://tc39.github.io/ecma262/#sec-toprimitive
+        // 将input转为原始类型值    PreferredType用于当input非原始类型时，用于指定优先类型，优先类型通常是字符串、数字或默认类型。
         function ToPrimitive(input, PreferredType) {
+            // 如果是null undefined string number boolean symbol 则直接返回自身
             switch (Type(input)) {
                 case 0 /* Undefined */: return input;
                 case 1 /* Null */: return input;
@@ -718,18 +797,26 @@ var Reflect;
                 case 5 /* Number */: return input;
             }
             var hint = PreferredType === 3 /* String */ ? "string" : PreferredType === 5 /* Number */ ? "number" : "default";
+            // 获得对象中定义的Symbol.toPrimitive方法，通过该方法获得对象的原始类型值
             var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
             if (exoticToPrim !== undefined) {
+                /**获得对象被转为原始类型的值 */
                 var result = exoticToPrim.call(input, hint);
                 if (IsObject(result))
                     throw new TypeError();
                 return result;
             }
+            /**通过ovaluOf和toString获取对象的原始值 */
             return OrdinaryToPrimitive(input, hint === "default" ? "number" : hint);
         }
-        // 7.1.1.1 OrdinaryToPrimitive(O, hint)
-        // https://tc39.github.io/ecma262/#sec-ordinarytoprimitive
+        /**
+         * 根据ECMAScript规则 ，当需要将对象转换为原始值时，通常会先尝试调用对象
+         * 的toString方法，如果对象的 toString 方法返回的不是原始值，
+         * 或者对象没有 toString 方法，
+         * 那么会接着尝试调用对象的 valueOf 方法。
+         */
         function OrdinaryToPrimitive(O, hint) {
+            /**如果hint是字符串，则优先调用toString，否则统一优先调用valueOf */
             if (hint === "string") {
                 var toString_1 = O.toString;
                 if (IsCallable(toString_1)) {
@@ -760,28 +847,22 @@ var Reflect;
             }
             throw new TypeError();
         }
-        // 7.1.2 ToBoolean(argument)
-        // https://tc39.github.io/ecma262/2016/#sec-toboolean
+        // 转换为布尔类型
         function ToBoolean(argument) {
             return !!argument;
         }
-        // 7.1.12 ToString(argument)
-        // https://tc39.github.io/ecma262/#sec-tostring
+        // 转换为字符串
         function ToString(argument) {
             return "" + argument;
         }
-        // 7.1.14 ToPropertyKey(argument)
-        // https://tc39.github.io/ecma262/#sec-topropertykey
+        // 将argument转化为原始值
         function ToPropertyKey(argument) {
             var key = ToPrimitive(argument, 3 /* String */);
             if (IsSymbol(key))
                 return key;
             return ToString(key);
         }
-        // 7.2 Testing and Comparison Operations
-        // https://tc39.github.io/ecma262/#sec-testing-and-comparison-operations
-        // 7.2.2 IsArray(argument)
-        // https://tc39.github.io/ecma262/#sec-isarray
+        // 是否为数组
         function IsArray(argument) {
             return Array.isArray
                 ? Array.isArray(argument)
@@ -789,20 +870,17 @@ var Reflect;
                     ? argument instanceof Array
                     : Object.prototype.toString.call(argument) === "[object Array]";
         }
-        // 7.2.3 IsCallable(argument)
-        // https://tc39.github.io/ecma262/#sec-iscallable
+        // 是否为函数
         function IsCallable(argument) {
             // NOTE: This is an approximation as we cannot check for [[Call]] internal method.
             return typeof argument === "function";
         }
-        // 7.2.4 IsConstructor(argument)
-        // https://tc39.github.io/ecma262/#sec-isconstructor
+        // 是否为构造函数
         function IsConstructor(argument) {
             // NOTE: This is an approximation as we cannot check for [[Construct]] internal method.
             return typeof argument === "function";
         }
-        // 7.2.7 IsPropertyKey(argument)
-        // https://tc39.github.io/ecma262/#sec-ispropertykey
+        // 是否为属性键 字符串和symbol为true，其余为false
         function IsPropertyKey(argument) {
             switch (Type(argument)) {
                 case 3 /* String */: return true;
@@ -810,10 +888,7 @@ var Reflect;
                 default: return false;
             }
         }
-        // 7.3 Operations on Objects
-        // https://tc39.github.io/ecma262/#sec-operations-on-objects
-        // 7.3.9 GetMethod(V, P)
-        // https://tc39.github.io/ecma262/#sec-getmethod
+        // 获取对象的默认类型转换方法 
         function GetMethod(V, P) {
             var func = V[P];
             if (func === undefined || func === null)
@@ -851,29 +926,41 @@ var Reflect;
             if (f)
                 f.call(iterator);
         }
-        // 9.1 Ordinary Object Internal Methods and Internal Slots
-        // https://tc39.github.io/ecma262/#sec-ordinary-object-internal-methods-and-internal-slots
-        // 9.1.1.1 OrdinaryGetPrototypeOf(O)
-        // https://tc39.github.io/ecma262/#sec-ordinarygetprototypeof
+        /**
+         * 
+         * @param {*} O 
+         * @returns 
+         * 
+         * 在 JavaScript 中，使用构造函数创建对象时，新创建的对象的原型会指向构造函数的原型对象。
+         * 按照规范，如果构造函数的 prototype 属性不是一个对象，而是一个原始值（如数字、字符串等），或者null、undefined
+         * 那么新创建的对象将会继承自 Object.prototype。
+         */
         function OrdinaryGetPrototypeOf(O) {
+            /**获取O的原型对象 */
             var proto = Object.getPrototypeOf(O);
+            /**
+             * O 为非函数对象
+             * O 为函数对象 并且 O 为Function.prototype（Function.prototype为函数对象）
+            */
             if (typeof O !== "function" || O === functionPrototype)
                 return proto;
-            // TypeScript doesn't set __proto__ in ES5, as it's non-standard.
-            // Try to determine the superclass constructor. Compatible implementations
-            // must either set __proto__ on a subclass constructor to the superclass constructor,
-            // or ensure each class has a valid `constructor` property on its prototype that
-            // points back to the constructor.
-            // If this is not the same as Function.[[Prototype]], then this is definately inherited.
-            // This is the case when in ES6 or when using __proto__ in a compatible browser.
+            /**
+             * TypeScript 在 ES5 中不设置 __proto__，因为这是非标准的。
+             * 尝试确定超类构造函数。兼容的实现必须在子类构造函数上设置 __proto__ 为超类构造函数，
+             * 或者确保每个类的原型上都有一个有效的 constructor 属性，指向相应的构造函数。
+             * 如果这与 Function.[[Prototype]] 不同，则肯定是继承的情况。
+             * 这种情况在 ES6 中或在兼容的浏览器中使用 __proto__ 时出现。
+             */
+            // 来到这里，那么O即是function对象，并且不是Function.prototype函数对象                                        
             if (proto !== functionPrototype)
                 return proto;
-            // If the super prototype is Object.prototype, null, or undefined, then we cannot determine the heritage.
+            // 如果超原型是Object.Prototype、null或undefined，则无法确定继承。
+            // 到这里，说明O为function
             var prototype = O.prototype;
             var prototypeProto = prototype && Object.getPrototypeOf(prototype);
             if (prototypeProto == null || prototypeProto === Object.prototype)
                 return proto;
-            // If the constructor was not a function, then we cannot determine the heritage.
+            // 如果构造函数不是函数，则无法确定继承。.
             var constructor = prototypeProto.constructor;
             if (typeof constructor !== "function")
                 return proto;
@@ -1054,20 +1141,27 @@ var Reflect;
                     return table !== undefined ? delete table[this._key] : false;
                 };
                 WeakMap.prototype.clear = function () {
-                    // NOTE: not a real clear, just makes the previous data unreachable
+                    // 不是一个真正的清除，只是使以前的数据无法访问
                     this._key = CreateUniqueKey();
                 };
                 return WeakMap;
             }());
+            /**创建唯一的Key */
             function CreateUniqueKey() {
                 var key;
                 do
                     key = "@@WeakMap@@" + CreateUUID();
+                // 直到keys中不存在key，保证key是唯一的
                 while (HashMap.has(keys, key));
                 keys[key] = true;
                 return key;
             }
+            /**
+             * 因为weakmap的键是对象的弱引用，所以要实现弱引用，在这里是将关联数据存储在
+             * target对象key对应的键值上，已达到在对象被回收时销毁映射关系的效果，从而实现弱引用。
+             */
             function GetOrCreateWeakMapTable(target, create) {
+                /**如果target中不存在 */
                 if (!hasOwn.call(target, rootKey)) {
                     if (!create)
                         return undefined;
@@ -1075,6 +1169,7 @@ var Reflect;
                 }
                 return target[rootKey];
             }
+            // 填充随机数字节数组
             function FillRandomBytes(buffer, size) {
                 for (var i = 0; i < size; ++i)
                     buffer[i] = Math.random() * 0xff | 0;
@@ -1107,7 +1202,13 @@ var Reflect;
                 return result;
             }
         }
-        // uses a heuristic used by v8 and chakra to force an object into dictionary mode.
+        // 使用v8和chakra使用的启发式方法强制对象进入字典模式。
+        /**
+         * 通过先将 obj.__ 设置为 undefined，
+         * 然后使用 delete obj.__ 删除这个属性，
+         * 实际上是在清除对象 obj 上的任何属性，
+         * 使obj成为一个字典对象
+         */
         function MakeDictionary(obj) {
             obj.__ = undefined;
             delete obj.__;

@@ -15,6 +15,7 @@ const ANIMATION = 'animation'
 
 type AnimationTypes = typeof TRANSITION | typeof ANIMATION
 
+/**组件props选项，继承BaseTransitionProps */
 export interface TransitionProps extends BaseTransitionProps<Element> {
   name?: string
   type?: AnimationTypes
@@ -31,9 +32,13 @@ export interface TransitionProps extends BaseTransitionProps<Element> {
   leaveActiveClass?: string
   leaveToClass?: string
 }
-
+/**用来存储临时添加的过度类名，以实现过度效果的控制和管理。
+ * 通过将临时过度类名存储在元素的vtcKey属性中，可以避免
+ * 在过渡过程中被其他操作覆盖或修改，确保过渡效果的稳定性和
+ * 一致性
+ */
 export const vtcKey = Symbol('_vtc')
-
+/**扩展Element元素 */
 export interface ElementWithTransition extends HTMLElement {
   // _vtc = Vue Transition Classes.
   // Store the temporarily-added transition classes on the element
@@ -41,7 +46,7 @@ export interface ElementWithTransition extends HTMLElement {
   // during the transition.
   [vtcKey]?: Set<string>
 }
-
+// 
 // DOM Transition is a higher-order-component based on the platform-agnostic
 // base Transition component, with DOM-specific logic.
 export const Transition: FunctionalComponent<TransitionProps> = (
