@@ -52,6 +52,7 @@ export type ResolvePropType<T> = IfNever<
  * 合并 Type、Value、Validator 的类型
  *
  * @example
+ * 通常值value的优先级大于指定类型，当value类型为不为never时，StringConstructor会被忽略
  * EpPropMergeType<StringConstructor, '1', 1> =>  1 | "1" // ignores StringConstructor
  * EpPropMergeType<StringConstructor, never, number> =>  string | number
  */
@@ -63,7 +64,15 @@ export type EpPropMergeType<Type, Value, Validator> =
 /**
  * Handling default values for input (constraints)
  *
- * 处理输入参数的默认值（约束）
+ * 处理输入参数的默认值（约束），返回被处理后的类型
+ * 
+ * EpPropInputDefault<false, object> //  () => object
+ * EpPropInputDefault<false, 1> // 1
+ * 
+ * 如果Required为true，那可以不做进一步验证，如果不是，检查default是不是数组或者对象
+ * 如果是的话需要通过函数的方式返回default值
+ * 
+ * 
  */
 export type EpPropInputDefault<
   Required extends boolean,
@@ -78,12 +87,18 @@ export type EpPropInputDefault<
  * Native prop types, e.g: `BooleanConstructor`, `StringConstructor`, `null`, `undefined`, etc.
  *
  * 原生 prop `类型，BooleanConstructor`、`StringConstructor`、`null`、`undefined` 等
+ * 
+ * 1. 函数类型：(...args: any) => any
+2. 构造函数类型：{ new (...args: any): any }
+3. undefined
+4. null
  */
 export type NativePropType =
   | ((...args: any) => any)
   | { new (...args: any): any }
   | undefined
   | null
+// 判断是否为原生类型
 export type IfNativePropType<T, Y, N> = [T] extends [NativePropType] ? Y : N
 
 /**

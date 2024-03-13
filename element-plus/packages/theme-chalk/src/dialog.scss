@@ -132,7 +132,6 @@
   left: 0;
   overflow: auto;
 }
-
 .dialog-fade-enter-active {
   animation: modal-fade-in getCssVar('transition-duration');
   .#{$namespace}-overlay-dialog {

@@ -11,3 +11,5 @@ const RootComponent = {
 
 createApp(RootComponent).mount('#app')
 ```
+
+导出 render、createApp、hydrate、createSSRApp、

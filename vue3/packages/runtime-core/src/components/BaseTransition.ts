@@ -80,8 +80,11 @@ export type TransitionHookCaller = <T extends any[] = [el: any]>(
 export type PendingCallback = (cancelled?: boolean) => void
 
 export interface TransitionState {
+  /**是否已挂载挂载 */
   isMounted: boolean
+  /**是否正在离开 */
   isLeaving: boolean
+  /**是否正在卸载 */
   isUnmounting: boolean
   // Track pending leave callbacks for children of the same key.
   // This is used to force remove leaving a child when a new copy is entering.
@@ -134,7 +137,7 @@ export const BaseTransitionPropsValidators = {
   onAfterAppear: TransitionHookValidator,
   onAppearCancelled: TransitionHookValidator
 }
-
+//
 const BaseTransitionImpl: ComponentOptions = {
   name: `BaseTransition`,
 

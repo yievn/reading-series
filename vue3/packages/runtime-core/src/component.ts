@@ -220,35 +220,46 @@ export type InternalRenderFunction = {
  * useful for advanced external libraries and tools.
  */
 export interface ComponentInternalInstance {
+  /**每个组件实例的唯一标识符 */
   uid: number
+  /**组件的类型，通常是一个对象或函数，包含了组件的选项定义 */
   type: ConcreteComponent
+  /**组件的父实例，如果当前组件是根组件，则此属性为null */
   parent: ComponentInternalInstance | null
+  /**指向组件树的根实例。对于根组件  root和self相同 */
   root: ComponentInternalInstance
+  /**全局上下文，其中包含了整个vue应用相关的配置和转态 */
   appContext: AppContext
   /**
    * Vnode representing this component in its parent's vdom tree
+   * 组件的虚拟节点，它是组件渲染输出的描述
    */
   vnode: VNode
   /**
    * The pending new vnode from parent updates
    * @internal
+   * 如果组件正在进行异步更新，这个属性指向下一个待更新的虚拟节点
    */
   next: VNode | null
   /**
    * Root vnode of this component's own vdom tree
+   * 组件当前渲染的虚拟节点树
    */
   subTree: VNode
   /**
    * Render effect instance
+   * 组件的响应式副作用实例，vue用它来重新渲染组件
    */
   effect: ReactiveEffect
   /**
    * Bound effect runner to be passed to schedulers
+   * 组件的更新函数，由响应式系统调用以应用更新
    */
   update: SchedulerJob
   /**
    * The render function that returns vdom tree.
    * @internal
+   * 组件的渲染函数，返回组件的虚拟节点树
    */
   render: InternalRenderFunction | null
   /**

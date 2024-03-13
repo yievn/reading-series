@@ -233,7 +233,6 @@ export const TeleportImpl = {
 
     updateCssVars(n2)
   },
-
   remove(
     vnode: VNode,
     parentComponent: ComponentInternalInstance | null,
@@ -264,7 +263,6 @@ export const TeleportImpl = {
       }
     }
   },
-
   move: moveTeleport,
   hydrate: hydrateTeleport
 }

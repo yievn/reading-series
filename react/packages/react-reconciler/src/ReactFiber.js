@@ -140,21 +140,54 @@ function FiberNode(
   mode: TypeOfMode,
 ) {
   // Instance
+  /**表示节点类型的标记，例如FunctionComponent ClassComponent，具体可看 */
   this.tag = tag;
+  /**节点的唯一标识符，用于进行节点的diff和更新 */
   this.key = key;
+  /** 大部分情况与 type 相同，某些情况不同，比如 FunctionComponent 使用 React.memo 包裹，表示元素的类型*/
   this.elementType = null;
+  /**表示元素的类型， 对于 FunctionComponent，指函数本身，
+   * 对于ClassComponent，指 class，对于 HostComponent，
+   * 指 DOM 节点 tagName */
   this.type = null;
+  /**FiberNode 对应的真实 DOM 节点 */
   this.stateNode = null;
 
   // Fiber
+  /**指向该 FiberNode 的父节点 */
   this.return = null;
+  /**指向该 FiberNode 的第一个子节点 */
   this.child = null;
+  /**指向右边第一个兄弟Fiber */
   this.sibling = null;
+  /**当前节点在父节点的子节点列表中的索引 */
   this.index = 0;
 
-  this.ref = null;
-  this.refCleanup = null;
+  /**
+   * function APP() {
+   *    return (
+   *      <div>
+   *          <p class="first"></p>
+   *          <p class="sec"></p>
+   *      </div>
+   *    )
+   * }
+   * 
+   * APP => div => p.first => p.sec
+   *   child   child    sibling 
+   * 
+   * p.first => div => APP
+   *      return  return
+   * 
+   * p.sec => div  => APP
+   *     return  return
+   */
 
+  /**存储 FiberNode 的引用信息，与 React 的 Ref 有关 */
+  this.ref = null;
+  /** */
+  this.refCleanup = null;
+  /**表示即将被应用到节点的 props 。当父组件发生更新时，会将新的 props 存储在 pendingProps 中，之后会被应用到节点。 */
   this.pendingProps = pendingProps;
   this.memoizedProps = null;
   this.updateQueue = null;

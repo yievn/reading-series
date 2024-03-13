@@ -41,8 +41,10 @@ const normalizeOptions = (params?: MessageParams) => {
   }
 
   if (!normalized.appendTo) {
+    // appendTo不存在，则默认添加到body中
     normalized.appendTo = document.body
   } else if (isString(normalized.appendTo)) {
+    // appendTo是字符串，找到该元素对象
     let appendTo = document.querySelector<HTMLElement>(normalized.appendTo)
 
     // should fallback to default value with a warning
@@ -59,7 +61,7 @@ const normalizeOptions = (params?: MessageParams) => {
 
   return normalized as MessageParamsNormalized
 }
-
+// 关闭指定的消息
 const closeMessage = (instance: MessageContext) => {
   const idx = instances.indexOf(instance)
   if (idx === -1) return
@@ -74,6 +76,7 @@ const createMessage = (
   context?: AppContext | null
 ): MessageContext => {
   const id = `message_${seed++}`
+  // 关闭时的回调函数
   const userOnClose = options.onClose
 
   const container = document.createElement('div')
@@ -107,10 +110,16 @@ const createMessage = (
         }
       : null
   )
+
+  /**
+   * 要不通过在函数调用时传入，也就是
+   * createMessage(..., context)
+   * 要不在调用ElMessage前使用ElMessage._context进行指定
+   */
   vnode.appContext = context || message._context
 
   render(vnode, container)
-  // instances will remove this item when close function gets called. So we do not need to worry about it.
+  // 当close函数被调用时，实例将删除此项。所以我们不需要担心它。
   appendTo.appendChild(container.firstElementChild!)
 
   const vm = vnode.component!
@@ -118,6 +127,7 @@ const createMessage = (
   const handler: MessageHandler = {
     // instead of calling the onClose function directly, setting this value so that we can have the full lifecycle
     // for out component, so that all closing steps will not be skipped.
+    // 而不是直接调用onClose函数，设置此值以便我们可以拥有完整的生命周期 对于out组件，因此不会跳过所有关闭步骤。
     close: () => {
       vm.exposed!.visible.value = false
     },
