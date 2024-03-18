@@ -30,14 +30,26 @@ declare module '@vue/reactivity' {
   }
 }
 
+/**
+ * patchProp 通常用于更新DOM元素的属性，例如更新元素的样式、事件监听器等
+ * nodeOps对象包含了一组DOM操作方法，用于执行DOM元素创建、插入、删除等操作
+ */
 const rendererOptions = /*#__PURE__*/ extend({ patchProp }, nodeOps)
 
 // lazy create the renderer - this makes core renderer logic tree-shakable
 // in case the user only imports reactivity utilities from Vue.
+/**
+ * 延迟创建渲染器的作用是为了在需要时才创建渲染器，而不是在每次引入时都立即创建，避免不必要的开销。
+ * 另一个作用是，即使用户只导入Vue中的响应式工具而不是用渲染器，犹豫渲染器的创建是延迟的，因此在构建
+ * 时可以通过Tree-shaking技术将未使用的渲染器逻辑从最终的构建文件中删除，减小构建体积
+ * 
+ */
 let renderer: Renderer<Element | ShadowRoot> | HydrationRenderer
 
 let enabledHydration = false
-
+/**
+ * 确保渲染器存在，避免重复创建渲染器
+ */
 function ensureRenderer() {
   return (
     renderer ||

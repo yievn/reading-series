@@ -15,7 +15,8 @@ import {
   useLockscreen,
   useZIndex,
 } from '@element-plus/hooks'
-import { UPDATE_MODEL_EVENT } from '@element-plus/constants'
+
+import { UPDATE_MODEL_EVENT, /**update:modelValue */} from '@element-plus/constants'
 import { addUnit, isClient } from '@element-plus/utils'
 import { useGlobalConfig } from '@element-plus/components/config-provider'
 
@@ -46,10 +47,13 @@ export const useDialog = (
   const style = computed<CSSProperties>(() => {
     const style: CSSProperties = {}
     const varPrefix = `--${namespace.value}-dialog` as const
+    /**非全屏时 */
     if (!props.fullscreen) {
+      /**top存在，则重新设置margin-top值 */
       if (props.top) {
         style[`${varPrefix}-margin-top`] = props.top
       }
+      /**width存在， 则设置width值 */
       if (props.width) {
         style[`${varPrefix}-width`] = addUnit(props.width)
       }
@@ -58,16 +62,17 @@ export const useDialog = (
   })
 
   const overlayDialogStyle = computed<CSSProperties>(() => {
+    /**水平垂直对齐弹框 */
     if (props.alignCenter) {
       return { display: 'flex' }
     }
     return {}
   })
-
+  /**动画进入，也就是打开了 */
   function afterEnter() {
     emit('opened')
   }
-
+  /**已经关闭了 */
   function afterLeave() {
     emit('closed')
     emit(UPDATE_MODEL_EVENT, false)
@@ -75,7 +80,7 @@ export const useDialog = (
       rendered.value = false
     }
   }
-
+  /**关闭前，即将关闭 */
   function beforeLeave() {
     emit('close')
   }
@@ -108,7 +113,10 @@ export const useDialog = (
       closed.value = true
       visible.value = false
     }
-
+    /**
+     * 关闭前的回调，会暂停 Dialog 的关闭. 
+     * 回调函数内执行 done 参数方法的时候才是真正关闭对话框的时候.
+     */
     if (props.beforeClose) {
       props.beforeClose(hide)
     } else {
@@ -117,6 +125,7 @@ export const useDialog = (
   }
 
   function onModalClick() {
+    // 点击 modal 关闭 Dialog
     if (props.closeOnClickModal) {
       handleClose()
     }
@@ -158,6 +167,7 @@ export const useDialog = (
   watch(
     () => props.modelValue,
     (val) => {
+      /**true */
       if (val) {
         closed.value = false
         open()

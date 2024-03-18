@@ -3,6 +3,13 @@ import { NOOP } from '@vue/shared'
 import type { App, Directive } from 'vue'
 import type { SFCInstallWithContext, SFCWithInstall } from './typescript'
 
+/**
+ * 将给定的组件通过app.component挂载到vue全局组件上
+ * 例如：
+ * withInstall(ElForm, {
+ *  ElFormItem
+ * })
+ */
 export const withInstall = <T, E extends Record<string, any>>(
   main: T,
   extra?: E
@@ -20,7 +27,12 @@ export const withInstall = <T, E extends Record<string, any>>(
   }
   return main as SFCWithInstall<T> & E
 }
-
+/**
+ * 
+ * @param fn 
+ * @param name 
+ * @returns 
+ */
 export const withInstallFunction = <T>(fn: T, name: string) => {
   ;(fn as SFCWithInstall<T>).install = (app: App) => {
     ;(fn as SFCInstallWithContext<T>)._context = app._context

@@ -21,7 +21,6 @@ import type {
 export const epPropKey = '__epPropKey'
 /**允许开发者为prop定义一个具体的类型 */
 export const definePropType = <T>(val: any): PropType<T> => val
-
 export const isEpProp = (val: unknown): val is EpProp<any, any, any> =>
   isObject(val) && !!(val as any)[epPropKey]
 

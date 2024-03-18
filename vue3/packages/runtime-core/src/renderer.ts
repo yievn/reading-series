@@ -2316,11 +2316,13 @@ function baseCreateRenderer(
   }
   
   const render: RootRenderFunction = (vnode, container, isSVG) => {
+    /**虚拟节点是空，并且container上的虚拟节点存在，则卸载挂载container上虚拟节点对应的DOM */
     if (vnode == null) {
       if (container._vnode) {
         unmount(container._vnode, null, null, true)
       }
     } else {
+      /**把虚拟节点生成真是DOM冰挂载到container上 */
       patch(container._vnode || null, vnode, container, null, null, null, isSVG)
     }
     flushPreFlushCbs()

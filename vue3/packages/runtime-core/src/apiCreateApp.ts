@@ -196,12 +196,13 @@ export type CreateAppFunction<HostElement> = (
 ) => App<HostElement>
 
 let uid = 0
-
+/**返回一个创建app应用实例的函数 */
 export function createAppAPI<HostElement>(
   render: RootRenderFunction<HostElement>,
   hydrate?: RootHydrateFunction
 ): CreateAppFunction<HostElement> {
   return function createApp(rootComponent, rootProps = null) {
+    /**非函数组件 */
     if (!isFunction(rootComponent)) {
       rootComponent = extend({}, rootComponent)
     }
@@ -210,7 +211,7 @@ export function createAppAPI<HostElement>(
       __DEV__ && warn(`root props passed to app.mount() must be an object.`)
       rootProps = null
     }
-
+    /**创建应用上下文对象 */
     const context = createAppContext()
 
     // TODO remove in 3.4
@@ -227,9 +228,9 @@ export function createAppAPI<HostElement>(
         }
       })
     }
-
+    /**已安装的插件映射表 */
     const installedPlugins = new WeakSet()
-
+    /**是否挂载 */
     let isMounted = false
 
     const app: App = (context.app = {

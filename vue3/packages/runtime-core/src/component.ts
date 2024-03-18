@@ -178,6 +178,7 @@ export type Component<
   | ConcreteComponent<Props, RawBindings, D, C, M>
   | ComponentPublicInstanceConstructor<Props>
 
+
 export type { ComponentOptions }
 
 type LifecycleHook<TFn = Function> = TFn[] | null
