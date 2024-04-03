@@ -178,6 +178,7 @@ const fieldValue = computed(() => {
   return getProp(model, props.prop).value
 })
 
+/**校正校验规则 */
 const normalizedRules = computed(() => {
   const { required } = props
 
@@ -194,18 +195,22 @@ const normalizedRules = computed(() => {
       props.prop
     ).value
     if (_rules) {
+      /**在form中的rules中存在该字段的校验规则 */
       rules.push(...ensureArray(_rules))
     }
   }
-
+  /**有设置必填信息，无论是true还是false */
   if (required !== undefined) {
+
     const requiredRules = rules
       .map((rule, i) => [rule, i] as const)
       .filter(([rule]) => Object.keys(rule).includes('required'))
 
     if (requiredRules.length > 0) {
       for (const [rule, i] of requiredRules) {
+        /**如果校验规则required值和在prop中设置的required值一样 那就跳过 */
         if (rule.required === required) continue
+        /**不一样则用在prop中设置的值来设置规则中的required */
         rules[i] = { ...rule, required }
       }
     } else {
@@ -216,8 +221,10 @@ const normalizedRules = computed(() => {
   return rules
 })
 
+/**是否启动校验，存在校验规则则启动校验 */
 const validateEnabled = computed(() => normalizedRules.value.length > 0)
 
+/**根据触发类型获取校验规则，当规则没有触发类型或者不传入传入trigger时，返回对应规则 */
 const getFilteredRule = (trigger: string) => {
   const rules = normalizedRules.value
   return (
@@ -236,10 +243,11 @@ const getFilteredRule = (trigger: string) => {
   )
 }
 
+/**该表单项是否为必填项 */
 const isRequired = computed(() =>
   normalizedRules.value.some((rule) => rule.required)
 )
-
+/**是否应该展示校验错误信息 */
 const shouldShowError = computed(
   () =>
     validateStateDebounced.value === 'error' &&
@@ -247,14 +255,16 @@ const shouldShowError = computed(
     (formContext?.showMessage ?? true)
 )
 
+/**当前label */
 const currentLabel = computed(
   () => `${props.label || ''}${formContext?.labelSuffix || ''}`
 )
 
+/**设置校验状态 */
 const setValidationState = (state: FormItemValidateState) => {
   validateState.value = state
 }
-
+/**处理校验错误 */
 const onValidationFailed = (error: FormValidateFailure) => {
   const { errors, fields } = error
   if (!errors || !fields) {
@@ -298,12 +308,14 @@ const validate: FormItemContext['validate'] = async (trigger, callback) => {
   }
 
   const hasCallback = isFunction(callback)
+  /**没有校验规则 */
   if (!validateEnabled.value) {
     callback?.(false)
     return false
   }
 
   const rules = getFilteredRule(trigger)
+  /**该触发类型没有对应的规则 */
   if (rules.length === 0) {
     callback?.(true)
     return true

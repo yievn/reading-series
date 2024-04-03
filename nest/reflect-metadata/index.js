@@ -8,10 +8,12 @@ var Reflect;
                 typeof this === "object" ? this :
                     Function("return this;")();
         var exporter = makeExporter(Reflect);
+        /**如果全局对象中没有 Reflect*/
         if (typeof root.Reflect === "undefined") {
             root.Reflect = Reflect;
         }
         else {
+            /**全局对象中存在Reflect */
             exporter = makeExporter(root.Reflect, exporter);
         }
         factory(exporter);
@@ -27,6 +29,7 @@ var Reflect;
     })(function (exporter) {
         var hasOwn = Object.prototype.hasOwnProperty;
         // feature test for Symbol support
+        // 是否支持Symbol特性
         var supportsSymbol = typeof Symbol === "function";
         /**
          * 对象的Symbol.toPrimitive（本身也是symbol值）属性，

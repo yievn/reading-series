@@ -59,14 +59,16 @@ class Schema {
   }
 
   define(rules: Rules) {
+    // 不能是空的
     if (!rules) {
       throw new Error('Cannot configure a schema with no rules');
     }
+    // 非对象
     if (typeof rules !== 'object' || Array.isArray(rules)) {
       throw new Error('Rules must be an object');
     }
     this.rules = {};
-
+    /**将各规则转成数组形式 */
     Object.keys(rules).forEach(name => {
       const item: Rule = rules[name];
       this.rules[name] = Array.isArray(item) ? item : [item];
@@ -92,10 +94,12 @@ class Schema {
     let source: Values = source_;
     let options: ValidateOption = o;
     let callback: ValidateCallback = oc;
+    /**options是函数，那说明他其实是回调函数，此时真正options为空 */
     if (typeof options === 'function') {
       callback = options;
       options = {};
     }
+    /**如果这个时候规则是空的，那么就到这里了 */
     if (!this.rules || Object.keys(this.rules).length === 0) {
       if (callback) {
         callback(null, source);
@@ -141,23 +145,31 @@ class Schema {
     }
 
     const series: Record<string, RuleValuePackage[]> = {};
+    /**options.keys为空则验证rules所有规则 */
     const keys = options.keys || Object.keys(this.rules);
     keys.forEach(z => {
+      /**z字段对应的规则 */
       const arr = this.rules[z];
+      // z字段对应的值
       let value = source[z];
+      // 逐个规则验证值
       arr.forEach(r => {
         let rule: InternalRuleItem = r;
+        // 规则中有transform方法，则执行值转换
         if (typeof rule.transform === 'function') {
+          // 复制一个，避免影响外层的source对象
           if (source === source_) {
             source = { ...source };
           }
+          // 计算新的值
           value = source[z] = rule.transform(value);
         }
+        // 如果此时rule是一个函数，那么把它当做一个validator
         if (typeof rule === 'function') {
           rule = {
             validator: rule,
           };
-        } else {
+        } else { // 否则，复制一个
           rule = { ...rule };
         }
 

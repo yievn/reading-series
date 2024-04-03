@@ -58,13 +58,14 @@ import type { CSSProperties } from 'vue'
 
 const { Close } = TypeComponents
 
+
 defineOptions({
   name: 'ElMessage',
 })
 
 const props = defineProps(messageProps)
 defineEmits(messageEmits)
-
+// 从全局配置中获取当前的zIndex配置
 const { ns, zIndex } = useGlobalComponentSettings('message')
 const { currentZIndex, nextZIndex } = zIndex
 

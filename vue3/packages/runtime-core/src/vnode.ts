@@ -57,16 +57,47 @@ export const Comment = Symbol.for('v-cmt')
 export const Static = Symbol.for('v-stc')
 
 export type VNodeTypes =
+/**表示一个普通的HTML标签名，如div  span  */
   | string
+  /**表示一个虚拟节点的实例，可以是任何类型的VNode */
   | VNode
+  /**表示一个Vue组件，可以使一个对象或通过defineComponent定义的组件 */
   | Component
+  /**表示文本节点的类型
+   * const textVNode = { type: Text, children: 'Hello' }
+   */
   | typeof Text
+  /**
+   * 表示静态节点的类型，用于静态内容的优化
+   * 通常由 Vue 的编译器内部处理，不直接在用户代码中使用。
+   */
   | typeof Static
+  /**表示注释节点的类型 
+   *  const commentVNode = { type: Comment, children: 'This is a comment' }
+   * 创建一个注释节点的VNode
+  */
   | typeof Comment
+  /**表示片段节点的类型，用于不在DOM中生成额外标签的多个子节点
+   *  const fragmentVNode = h(Fragment, [h('div'), h('span')])
+   * 创建一个包含多个子节点的片段
+   */
   | typeof Fragment
+  /**
+   * 表示 Teleport 组件的类型，用于将子节点渲染到 DOM 的其他位置。
+   * <template>
+     <teleport to="#end-of-body">
+       <div>Teleported Content</div>
+     </teleport>
+   </template>
+   */
   | typeof Teleport
+  /** */
   | typeof TeleportImpl
+  /**
+   * 表示 Suspense 组件的类型，用于异步组件的加载状态处理。
+   */
   | typeof Suspense
+  /** */
   | typeof SuspenseImpl
 
 export type VNodeRef =
@@ -90,6 +121,7 @@ export type VNodeNormalizedRef =
 
 type VNodeMountHook = (vnode: VNode) => void
 type VNodeUpdateHook = (vnode: VNode, oldVNode: VNode) => void
+
 export type VNodeHook =
   | VNodeMountHook
   | VNodeUpdateHook
@@ -98,12 +130,30 @@ export type VNodeHook =
 
 // https://github.com/microsoft/TypeScript/issues/33099
 export type VNodeProps = {
+  /**
+   * 在列表渲染中，key用于优化节点的更新和重排
+   */
   key?: string | number | symbol
+  /** 
+   * 用于在Vue组件中引用DOM元素或子组件实例
+   * 通过ref属性，可以在组件中访问子组件或DOM元素的引用
+  */
   ref?: VNodeRef
+  /**
+   * 标记是否为ref在v-for中使用
+   * 以便在循环中正确处理引用
+   */
   ref_for?: boolean
+  /**
+   * 用于指定ref的键，以便在组件中正确识别和使用引用
+   */
   ref_key?: string
 
   // vnode hooks
+  /**允
+   * 许开发者在虚拟节点的不同生命周期阶段挂载、更新和卸载时执行自定义
+   * 逻辑，如执行一些副作用操作或处理特定的逻辑
+   */
   onVnodeBeforeMount?: VNodeMountHook | VNodeMountHook[]
   onVnodeMounted?: VNodeMountHook | VNodeMountHook[]
   onVnodeBeforeUpdate?: VNodeUpdateHook | VNodeUpdateHook[]
@@ -465,12 +515,12 @@ function createBaseVNode(
     // compiled element vnode - if children is passed, only possible types are
     // string or Array.
     vnode.shapeFlag |= isString(children)
-      ? ShapeFlags.TEXT_CHILDREN
-      : ShapeFlags.ARRAY_CHILDREN
+      ? ShapeFlags.TEXT_CHILDREN // 文本节点
+      : ShapeFlags.ARRAY_CHILDREN // 多子节点
   }
 
   // validate key
-  if (__DEV__ && vnode.key !== vnode.key) {
+  if (__DEV__ && vnode.key !== vnode.key) { // NaN
     warn(`VNode created with invalid key (NaN). VNode type:`, vnode.type)
   }
 
@@ -515,13 +565,14 @@ function _createVNode(
   dynamicProps: string[] | null = null,
   isBlockNode = false
 ): VNode {
+  /**没有传入type，则创建注释节点 */
   if (!type || type === NULL_DYNAMIC_COMPONENT) {
     if (__DEV__ && !type) {
       warn(`Invalid vnode type when creating vnode: ${type}.`)
     }
     type = Comment
   }
-
+  /**type 为虚拟节点 */
   if (isVNode(type)) {
     // createVNode receiving an existing vnode. This happens in cases like
     // <component :is="vnode"/>

@@ -15,17 +15,23 @@
  *
  * Check the `patchElement` function in '../../runtime-core/src/renderer.ts' to see how the
  * flags are handled during diff.
+ * 
+ * PatchFlags定义了一系列枚举值，这些枚举值被用作有话题是，帮助Vue的渲染器在diff过程中更高效
+ * 地更新虚拟DOM，通过使用这些标志，VUE可以知道组件或元素的哪些部分是动态的，从而只更新那些
+ * 必要的部分，而不是重新渲染整个组件或元素
  */
 export const enum PatchFlags {
   /**
    * Indicates an element with dynamic textContent (children fast path)
+   * 表示有动态的textContent（即，文本内容是动态绑定的）。
    */
   TEXT = 1,
 
   /**
    * Indicates an element with dynamic class binding.
+   * 表示元素有动态绑定的 class
    */
-  CLASS = 1 << 1,
+  CLASS = 1 << 1, // 2
 
   /**
    * Indicates an element with dynamic style
@@ -37,8 +43,9 @@ export const enum PatchFlags {
    * const style = { color: 'red' }
    * render() { return e('div', { style }) }
    * ```
+   * 表示元素有动态绑定的 style。
    */
-  STYLE = 1 << 2,
+  STYLE = 1 << 2, // 4
 
   /**
    * Indicates an element that has non-class/style dynamic props.
@@ -46,6 +53,7 @@ export const enum PatchFlags {
    * class/style). when this flag is present, the vnode also has a dynamicProps
    * array that contains the keys of the props that may change so the runtime
    * can diff them faster (without having to worry about removed props)
+   * 表示元素或组件有除 class 和 style 之外的动态属性（props）。
    */
   PROPS = 1 << 3,
 
@@ -53,6 +61,8 @@ export const enum PatchFlags {
    * Indicates an element with props with dynamic keys. When keys change, a full
    * diff is always needed to remove the old key. This flag is mutually
    * exclusive with CLASS, STYLE and PROPS.
+   * 表示元素或组件有动态键的属性，或者属性中包含复杂的数据结构，
+   * 如绑定对象，这要求在更新时进行完整的属性对比。
    */
   FULL_PROPS = 1 << 4,
 
@@ -60,21 +70,26 @@ export const enum PatchFlags {
    * Indicates an element that requires props hydration
    * (but not necessarily patching)
    * e.g. event listeners & v-bind with prop modifier
+   * 用于 SSR（服务器端渲染）的水合过程中，表示元素有事件监听器需要被附加。
    */
   NEED_HYDRATION = 1 << 5,
 
   /**
    * Indicates a fragment whose children order doesn't change.
+   * 表示一个 Fragment（片段）的子节点顺序不会改变。
    */
   STABLE_FRAGMENT = 1 << 6,
 
   /**
    * Indicates a fragment with keyed or partially keyed children
+   * 表示一个 Fragment 的子节点是有键（key）的，这意味着使用了 v-for 并且子节点可以被唯一标识
    */
   KEYED_FRAGMENT = 1 << 7,
 
   /**
    * Indicates a fragment with unkeyed children.
+   * UNKEYED_FRAGMENT (256)：表示一个 Fragment 的子节点没有键（key），
+   * 这通常意味着使用了 v-for 但没有提供 key。
    */
   UNKEYED_FRAGMENT = 1 << 8,
 
@@ -83,6 +98,7 @@ export const enum PatchFlags {
    * directives (onVnodeXXX hooks). since every patched vnode checks for refs
    * and onVnodeXXX hooks, it simply marks the vnode so that a parent block
    * will track it.
+   * 表示一个元素只需要非属性（如引用、指令）的更新。
    */
   NEED_PATCH = 1 << 9,
 
@@ -90,6 +106,7 @@ export const enum PatchFlags {
    * Indicates a component with dynamic slots (e.g. slot that references a v-for
    * iterated value, or dynamic slot names).
    * Components with this flag are always force updated.
+   * 表示组件有动态插槽内容。
    */
   DYNAMIC_SLOTS = 1 << 10,
 
@@ -97,6 +114,7 @@ export const enum PatchFlags {
    * Indicates a fragment that was created only because the user has placed
    * comments at the root level of a template. This is a dev-only flag since
    * comments are stripped in production.
+   * 仅在开发模式下使用，表示因为模板中的根级别条件或循环而创建的 Fragment。
    */
   DEV_ROOT_FRAGMENT = 1 << 11,
 
@@ -111,6 +129,9 @@ export const enum PatchFlags {
   /**
    * Indicates a hoisted static vnode. This is a hint for hydration to skip
    * the entire sub tree since static content never needs to be updated.
+   * 
+   * HOISTED和BAIL是特殊的标志，用于指示静态节点和退出优化模式。
+   * 它们是负值，因为它们不参与常规的位运算检查。
    */
   HOISTED = -1,
   /**

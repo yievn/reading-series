@@ -4,9 +4,17 @@ import { ComponentInternalInstance, getComponentName } from './component'
 import { warn } from './warning'
 
 export interface SchedulerJob extends Function {
+  /**任务的唯一标识符，Vue使用这个ID来避免将相同的任务多次加到调度队列中 */
   id?: number
+  /**表示这个任务是否应该在所有非预处理任务之前执行。这通常用于如beforeUpdate钩子这样的场景
+   * 确保他们在组件更新之前执行
+   */
   pre?: boolean
+  /**表示这个任务是否仍然活跃。如果一个任务不再活跃（例如，一个组件已经被卸载），那么它就不应该被执行 */
   active?: boolean
+  /**标记这个任务是否是计算属性的重新计算，计算属性的更新通常有更高的优先级，因为它们可能会影响到其他响应式
+   * 效果的执行
+   */
   computed?: boolean
   /**
    * Indicates whether the effect is allowed to recursively trigger itself
@@ -22,12 +30,15 @@ export interface SchedulerJob extends Function {
    * triggers itself again, it's likely intentional and it is the user's
    * responsibility to perform recursive state mutation that eventually
    * stabilizes (#1727).
+   * 标识是否允许这个任务递归地出发自己，在某些情况下，任务可能会直接或间接地出发自己的重新执行，
+   * 这个字段用来控制这种行为是否被允许
    */
   allowRecurse?: boolean
   /**
    * Attached by renderer.ts when setting up a component's render effect
    * Used to obtain component information when reporting max recursive updates.
    * dev only.
+   * 任务所属的组件实例，这个信息主要用于开发者工具和错误报告，帮助开发者更好地理解任务的来源
    */
   ownerInstance?: ComponentInternalInstance
 }
@@ -62,6 +73,7 @@ export function nextTick<T = void, R = void>(
 // Use binary-search to find a suitable position in the queue,
 // so that the queue maintains the increasing order of job's id,
 // which can prevent the job from being skipped and also can avoid repeated patching.
+/**用于在调度队列中找到一个合适的插入位置，以保持队列的有序性。 */
 function findInsertionIndex(id: number) {
   // the start index should be `flushIndex + 1`
   let start = flushIndex + 1

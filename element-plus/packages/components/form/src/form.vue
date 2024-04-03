@@ -47,11 +47,11 @@ const formClasses = computed(() => {
     },
   ]
 })
-
+/**获取field */
 const getField: FormContext['getField'] = (prop) => {
   return fields.find((field) => field.prop === prop)
 }
-
+/**添加field */
 const addField: FormContext['addField'] = (field) => {
   fields.push(field)
 }
@@ -74,8 +74,10 @@ const clearValidate: FormContext['clearValidate'] = (props = []) => {
   filterFields(fields, props).forEach((field) => field.clearValidate())
 }
 
+/**是否可校验 */
 const isValidatable = computed(() => {
   const hasModel = !!props.model
+  // model不存在
   if (!hasModel) {
     debugWarn(COMPONENT_NAME, 'model is required for validate to work.')
   }

@@ -18,6 +18,7 @@ export type RuleType =
   | 'pattern'
   | 'any';
 
+
 export interface ValidateOption {
   //  控制是否抑制内部警告信息
   suppressWarning?: boolean;
@@ -246,8 +247,36 @@ export interface RuleValuePackage {
  * 数据的有效性和一致性
  */
 export interface InternalRuleItem extends Omit<RuleItem, 'validator'> {
+  /**
+   * 表示当前验证规则所应用的字段名称。它是一个简单的字段名，
+   * 没有包含任何路径信息，指的是直接的字段名。
+   */
   field?: string;  //  字段名称 name
+  /**
+   * 表示完整的字段引用路径。当验证嵌套对象时，
+   * fullField 提供了从根到当前字段的完整路径，
+   * 这有助于在复杂对象中准确定位字段。
+   */
   fullField?: string; // 完整的字段引用路径 user.name
+  /**
+   * 字段引用路径数组，可能包含从根到当前字段的路径中的所有字段名。
+   * 这个属性可以用来追踪嵌套对象中字段的完整路径。
+   */
   fullFields?: string[]; // 字段引用路径数据
   validator?: RuleItem['validator'] | ExecuteValidator;
 }
+
+/**
+// 假设有一个嵌套对象 user，其中包含一个嵌套的 address 对象，address 对象中有一个 city 字段
+const ruleItemExample: InternalRuleItem = {
+  field: 'city',
+  fullField: 'user.address.city',
+  fullFields: ['user', 'address', 'city']
+};
+
+// 这个例子中：
+// field 表示我们关注的字段是 'city'
+// fullField 表示从根对象到目标字段的完整路径 'user.address.city'
+// fullFields 以数组形式表示路径，展示了从根到目标字段的每一级字段名 ['user', 'address', 'city']
+
+ */

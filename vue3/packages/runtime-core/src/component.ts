@@ -668,6 +668,9 @@ export function isStatefulComponent(instance: ComponentInternalInstance) {
 
 export let isInSSRComponentSetup = false
 
+/**
+ * 
+ */
 export function setupComponent(
   instance: ComponentInternalInstance,
   isSSR = false
@@ -675,10 +678,22 @@ export function setupComponent(
   isInSSRComponentSetup = isSSR
 
   const { props, children } = instance.vnode
+  /**检查当前组件实例是否为有状态组件（即，它是否有一个setup函数或选项）。
+   * 这个检查决定了接下来的初始化步骤
+   */
   const isStateful = isStatefulComponent(instance)
+  /**初始化组件props，这包括设置props的默认值和验证props类型 */
   initProps(instance, props, isStateful, isSSR)
+  /**初始化组件的插槽，这涉及到处理传递给组件的子节点，并将他们
+   * 分配给相应的插槽
+   */
   initSlots(instance, children)
-
+  /**
+   * 如果组件是有状态的（即，它有一个setup函数或选项），则调用setupStatefulComponent
+   * 函数来执行setup函数并处理其返回值。这可能包括将返回的对象绑定到
+   * 组件的上下文上，或处理返回的渲染函数。如果组件不是有状态的，
+   * setupResult将被设置为undefined
+   */
   const setupResult = isStateful
     ? setupStatefulComponent(instance, isSSR)
     : undefined

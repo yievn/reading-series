@@ -356,21 +356,31 @@ function baseCreateRenderer(
   // Note: functions inside this closure should use `const xxx = () => {}`
   // style in order to prevent being inlined by minifiers.
   const patch: PatchFn = (
+    /**旧虚拟节点 */
     n1,
+    /**新的虚拟节点 */
     n2,
+    /**DOM容器，新的VNode将被挂载或更新到这个容器中 */
     container,
+    /**锚点，用于确定新节点在容器中的插入位置 */
     anchor = null,
+    /**父组件实例，当前正在处理的VNode的父组件实例 */
     parentComponent = null,
+    /**父级的 Suspense 组件实例，如果有的话 */
     parentSuspense = null,
+    /**标记是否在SVG模式下渲染 */
     isSVG = false,
+    /**插槽作用域ID，用于作用域插槽的渲染 */
     slotScopeIds = null,
+    /**优化标志 */
     optimized = __DEV__ && isHmrUpdating ? false : !!n2.dynamicChildren
   ) => {
+    /**两个节点一样，不需要继续处理 */
     if (n1 === n2) {
       return
     }
 
-    // patching & not same type, unmount old tree
+    // 两节点不是相同节点类型和key，则卸载旧节点
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
       unmount(n1, parentComponent, parentSuspense, true)
@@ -1154,6 +1164,7 @@ function baseCreateRenderer(
     optimized: boolean
   ) => {
     n2.slotScopeIds = slotScopeIds
+    /**没有旧节点 */
     if (n1 == null) {
       if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
         ;(parentComponent!.ctx as KeepAliveContext).activate(
@@ -1175,6 +1186,7 @@ function baseCreateRenderer(
         )
       }
     } else {
+      /**新旧节点都有，那么就是更新旧节点拉 */
       updateComponent(n1, n2, optimized)
     }
   }
@@ -1190,6 +1202,11 @@ function baseCreateRenderer(
   ) => {
     // 2.x compat may pre-create the component instance before actually
     // mounting
+
+    /**
+     * initialVNode.isCompatRoot用于判断该节点是否作为兼容模式下
+     * 的根组件。在vue3的兼容
+     */
     const compatMountInstance =
       __COMPAT__ && initialVNode.isCompatRoot && initialVNode.component
     const instance: ComponentInternalInstance =
@@ -1213,7 +1230,16 @@ function baseCreateRenderer(
     if (isKeepAlive(initialVNode)) {
       ;(instance.ctx as KeepAliveContext).renderer = internals
     }
-
+    /**
+     * 不在兼容模式下要不就是在兼容模式下但是compatMountInstance没被创建
+     * 这个条件确保只有当不需要处理Vue2的兼容性问题时，才执行
+     * vue3的正常组件初始化流程（设置组件的响应式数据、处理组件的生命
+     * 周期钩子）。
+     * 
+     * 如果已经有一个按照Vue2的方式预创建的组件实例（在兼容模式下），这个
+     * 条件防止Vue3再次初始化该实例。这是因为预创建的实例可能已经进行
+     * 了一些初始化工作，重复这些工作可能会导致错误或性能问题
+     */
     // resolve props and slots for setup context
     if (!(__COMPAT__ && compatMountInstance)) {
       if (__DEV__) {
@@ -1299,6 +1325,7 @@ function baseCreateRenderer(
     optimized
   ) => {
     const componentUpdateFn = () => {
+      // 未挂载
       if (!instance.isMounted) {
         let vnodeHook: VNodeHook | null | undefined
         const { el, props } = initialVNode
