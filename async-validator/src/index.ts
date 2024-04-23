@@ -123,6 +123,7 @@ class Schema {
         add(results[i]);
       }
       if (!errors.length) {
+        // 没有错误
         callback(null, source);
       } else {
         fields = convertFieldsError(errors);
@@ -196,11 +197,14 @@ class Schema {
       series,
       options,
       (data, doIt) => {
+        /**data 为series项， data.rule校验规则 */
         const rule = data.rule;
+        /**如果校验规则的type为objecte或者数组，并且存在嵌套的校验规则 */
         let deep =
           (rule.type === 'object' || rule.type === 'array') &&
           (typeof rule.fields === 'object' ||
             typeof rule.defaultField === 'object');
+        
         deep = deep && (rule.required || (!rule.required && data.value));
         rule.field = data.field;
 
@@ -220,7 +224,6 @@ class Schema {
           if (errorList.length && rule.message !== undefined) {
             errorList = [].concat(rule.message);
           }
-
           // Fill error info
           let filledErrors = errorList.map(complementError(rule, source));
 
@@ -336,9 +339,11 @@ class Schema {
   }
 
   getType(rule: InternalRuleItem) {
+    // 具有正则表达式
     if (rule.type === undefined && rule.pattern instanceof RegExp) {
       rule.type = 'pattern';
     }
+    /** */
     if (
       typeof rule.validator !== 'function' &&
       rule.type &&
@@ -351,17 +356,22 @@ class Schema {
 
 
   getValidationMethod(rule: InternalRuleItem) {
+    /**存在validator函数 */
     if (typeof rule.validator === 'function') {
       return rule.validator;
     }
     const keys = Object.keys(rule);
     const messageIndex = keys.indexOf('message');
+    /**如果有message字段 */
     if (messageIndex !== -1) {
+      // 去除message字段
       keys.splice(messageIndex, 1);
     }
+    /**如果只剩有一个required字段 */
     if (keys.length === 1 && keys[0] === 'required') {
       return validators.required;
     }
+
     return validators[this.getType(rule)] || undefined;
   }
 }

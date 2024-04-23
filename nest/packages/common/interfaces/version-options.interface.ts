@@ -4,6 +4,9 @@ import { VersioningType } from '../enums/version-type.enum';
  * Indicates that this will work for any version passed in the request, or no version.
  *
  * @publicApi
+ * VERSION_NEUTRAL被用作一个特殊的标识符，表示某个路由或控制器是版本中立的，
+ * 即它不属于任何特定的版本，对所有版本
+ * 都可用。
  */
 export const VERSION_NEUTRAL = Symbol('VERSION_NEUTRAL');
 
@@ -27,6 +30,11 @@ export interface VersionOptions {
    * Supported only by HTTP-based applications (does not apply to non-HTTP microservices).
    *
    * @see [Versioning](https://docs.nestjs.com/techniques/versioning)
+   * 
+   * 允许指定一个或多个版本号，这些版本号将应用于装饰器（如@Controller或@Get等）标记的控制器或
+   * 路由处理程序。客户端可以通过请求头、URL参数或URL前缀来指定他们希望调用的API版本
+   * 
+   * 可以是一个字符串、字符串数组或符号，用于定义特定路由或控制器支持的版本。
    */
   version?: VersionValue;
 }

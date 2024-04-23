@@ -75,7 +75,7 @@ var Reflect;
         var _WeakMap = !usePolyfill && typeof WeakMap === "function" ? WeakMap : CreateWeakMapPolyfill();
         // [[Metadata]] internal slot
         // https://rbuckton.github.io/reflect-metadata/#ordinary-object-internal-methods-and-internal-slots
-        /**元数据映射 */
+        /**元数据映射，用于存放元数据 */
         var Metadata = new _WeakMap();
         /**
          * Applies a set of decorators to a property of a target object.
@@ -127,7 +127,7 @@ var Reflect;
                 /** attributes必须是对象或者undefined或者null*/
                 if (!IsObject(attributes) && !IsUndefined(attributes) && !IsNull(attributes))
                     throw new TypeError();
-                if (IsNull(attributes)) // attributes为null
+                if (IsNull(attributes))  // attributes为null
                     attributes = undefined;
                 propertyKey = ToPropertyKey(propertyKey);
                 return DecorateProperty(decorators, target, propertyKey, attributes);
@@ -248,14 +248,17 @@ var Reflect;
          *
          */
         function defineMetadata(metadataKey, metadataValue, target, propertyKey) {
+            // 不是对象，抛出错误
             if (!IsObject(target))
                 throw new TypeError();
+            // 非undefined，将key转换为原始类型值
             if (!IsUndefined(propertyKey))
                 propertyKey = ToPropertyKey(propertyKey);
             return OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
         }
         exporter("defineMetadata", defineMetadata);
         /**
+         * 获取一个值，该值指示目标对象或其原型链是否定义了提供的元数据键。
          * Gets a value indicating whether the target object or its prototype chain has the provided metadata key defined.
          * @param metadataKey A key used to store and retrieve metadata.
          * @param target The target object on which the metadata is defined.
@@ -329,7 +332,7 @@ var Reflect;
          *
          *     // method (on prototype)
          *     result = Reflect.hasOwnMetadata("custom:annotation", Example.prototype, "method");
-         *
+         *  当前对象存在元数据
          */
         function hasOwnMetadata(metadataKey, target, propertyKey) {
             if (!IsObject(target))
@@ -657,6 +660,7 @@ var Reflect;
             var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
             if (hasOwn)
                 return true;
+            // 获取O的原型
             var parent = OrdinaryGetPrototypeOf(O);
             if (!IsNull(parent))
                 return OrdinaryHasMetadata(MetadataKey, parent, P);
@@ -799,6 +803,7 @@ var Reflect;
                 case 4 /* Symbol */: return input;
                 case 5 /* Number */: return input;
             }
+            // 如果是引用对象
             var hint = PreferredType === 3 /* String */ ? "string" : PreferredType === 5 /* Number */ ? "number" : "default";
             // 获得对象中定义的Symbol.toPrimitive方法，通过该方法获得对象的原始类型值
             var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
@@ -984,11 +989,13 @@ var Reflect;
                     this._values = values;
                     this._selector = selector;
                 }
+                /**在代码中，@@iterator是一种表示Symbol.iterator属性的约定命名方式，用于模拟Symbol.iterator属性的存在 */
                 MapIterator.prototype["@@iterator"] = function () { return this; };
                 MapIterator.prototype[iteratorSymbol] = function () { return this; };
                 MapIterator.prototype.next = function () {
                     var index = this._index;
                     if (index >= 0 && index < this._keys.length) {
+                        /**根据_selector拿到当前要返回的数据形式 */
                         var result = this._selector(this._keys[index], this._values[index]);
                         if (index + 1 >= this._keys.length) {
                             this._index = -1;
@@ -1121,6 +1128,7 @@ var Reflect;
         function CreateWeakMapPolyfill() {
             var UUID_SIZE = 16;
             var keys = HashMap.create();
+            /**根key */
             var rootKey = CreateUniqueKey();
             return /** @class */ (function () {
                 function WeakMap() {

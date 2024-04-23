@@ -170,6 +170,7 @@ function asyncSerialArray(
   const arrLength = arr.length;
 
   function next(errors: ValidateError[]) {
+    /**有错误就立马返回 */
     if (errors && errors.length) {
       callback(errors);
       return;
@@ -229,7 +230,7 @@ export function asyncMap(
   callback: (errors: ValidateError[]) => void,
   source: Values,
 ): Promise<Values> {
-  // 当first为true
+  // 当first为true，只要出现一个错误，就不继续向下校验
   if (option.first) {
     const pending = new Promise<Values>((resolve, reject) => {
       const next = (errors: ValidateError[]) => {
@@ -239,7 +240,7 @@ export function asyncMap(
           ? reject(new AsyncValidationError(errors, convertFieldsError(errors)))
           : resolve(source);
       };
-      /**将对象打平为数组 */
+      /**将series对象打平为数组 */
       const flattenArr = flattenObjArr(objArr);
       asyncSerialArray(flattenArr, func, next);
     });
@@ -250,10 +251,12 @@ export function asyncMap(
     option.firstFields === true
       ? Object.keys(objArr)
       : option.firstFields || [];
-
+  /**所有字段key数组 */
   const objArrKeys = Object.keys(objArr);
+  /**所有字段key数组 长度 */
   const objArrLength = objArrKeys.length;
   let total = 0;
+  /**校验结果 */
   const results: ValidateError[] = [];
   const pending = new Promise<Values>((resolve, reject) => {
     const next = (errors: ValidateError[]) => {
