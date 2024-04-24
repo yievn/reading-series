@@ -22,6 +22,7 @@ export interface DynamicModule extends ModuleMetadata {
    * from a global module do not need to import the provider module.
    *
    * @default false
+   * 是否为全局模块
    */
   global?: boolean;
 }

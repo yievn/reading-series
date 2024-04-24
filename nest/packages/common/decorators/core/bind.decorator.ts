@@ -16,5 +16,5 @@ export function Bind(...decorators: any[]): MethodDecorator {
   ) => {
     decorators.forEach((fn, index) => fn(target, key, index));
     return descriptor;
-  };
+  }; 
 }

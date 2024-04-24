@@ -2,7 +2,9 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
 
 export enum UuidFactoryMode {
+  /**随机的 */
   Random = 'random',
+  /**确定的 */
   Deterministic = 'deterministic',
 }
 

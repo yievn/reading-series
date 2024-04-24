@@ -4,8 +4,11 @@ import { EnhancerSubtype } from '@nestjs/common/constants';
 export type ModuleNode = {
   metadata: {
     type: 'module';
+    /**是否全局模块 */
     global: boolean;
+    /**是否动态模块 */
     dynamic: boolean;
+    /**是否内部模块 */
     internal: boolean;
   };
 };
@@ -13,8 +16,11 @@ export type ModuleNode = {
 export type ClassNode = {
   parent: string;
   metadata: {
+    /**类依赖节点可以是provider提供者、控制器、中间件 */
     type: 'provider' | 'controller' | 'middleware' | 'injectable';
+    /**子类型 */
     subtype?: EnhancerSubtype;
+    /**元模块名称 */
     sourceModuleName: string;
     durable: boolean;
     static: boolean;
