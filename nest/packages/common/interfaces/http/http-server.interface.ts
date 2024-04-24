@@ -12,6 +12,7 @@ export type ErrorHandler<TRequest = any, TResponse = any> = (
   res: TResponse,
   next?: Function,
 ) => any;
+/**路由处理程序 */
 export type RequestHandler<TRequest = any, TResponse = any> = (
   req: TRequest,
   res: TResponse,

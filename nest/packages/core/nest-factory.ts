@@ -31,15 +31,20 @@ import { DependenciesScanner } from './scanner';
  * @publicApi
  */
 export class NestFactoryStatic {
+  /**
+   * logger 用于在Nest应用中的不同初始化阶段记录重要的信息和错误。
+   */
   private readonly logger = new Logger('NestFactory', {
     timestamp: true,
   });
+  /**错误时中断 */
   private abortOnError = true;
+  /**自动清除日志 */
   private autoFlushLogs = false;
 
   /**
    * Creates an instance of NestApplication.
-   *
+   *创建一个NestApplication实例
    * @param module Entry (root) application module class
    * @param options List of options to initialize NestApplication
    *
@@ -56,6 +61,7 @@ export class NestFactoryStatic {
    * @param module Entry (root) application module class
    * @param httpAdapter Adapter to proxy the request/response cycle to
    *    the underlying HTTP server
+   * 将请求/响应周期代理到底层HTTP服务器的适配器
    * @param options List of options to initialize NestApplication
    *
    * @returns A promise that, when resolved,
@@ -71,11 +77,13 @@ export class NestFactoryStatic {
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
+    /**如果serverOrOptions是HTTPServer，那么就直接给到httpServer，否则，创建一个默认的HTTPServer（默认是express服务） */
     const [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
       ? [serverOrOptions, options]
       : [this.createHttpAdapter(), serverOrOptions];
-
+    /**应用全局配置对象 */
     const applicationConfig = new ApplicationConfig();
+    /**根据配置对象创建一个nest容器 */
     const container = new NestContainer(applicationConfig);
     const graphInspector = this.createGraphInspector(appOptions, container);
 
@@ -301,7 +309,7 @@ export class NestFactoryStatic {
     );
     return new ExpressAdapter(httpServer);
   }
-
+  /**是否俄日HTTP服务器 */
   private isHttpServer(
     serverOrOptions: AbstractHttpAdapter | NestApplicationOptions,
   ): serverOrOptions is AbstractHttpAdapter {
