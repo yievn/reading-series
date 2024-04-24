@@ -42,7 +42,15 @@ export type InjectableOptions = ScopeOptions;
  */
 export function Injectable(options?: InjectableOptions): ClassDecorator {
   return (target: object) => {
+    /**
+     * 这是一个布尔值，用于标记该类为一个可注入的提供者，这个标记让nestjs的依赖注入系统
+     * 能够识别并处理这个类
+     */
     Reflect.defineMetadata(INJECTABLE_WATERMARK, true, target);
+    /**
+     * 这里存储了传递给Injectable装饰器的options对象，这个对象包含了关于提供者作用于的配置
+     * 信息，作用于决定了提供者的生命周期和可见性。
+     */
     Reflect.defineMetadata(SCOPE_OPTIONS_METADATA, options, target);
   };
 }

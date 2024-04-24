@@ -51,8 +51,11 @@ export const CUSTOM_ROUTE_ARGS_METADATA = '__customRouteArgs__';
 export const FILTER_CATCH_EXCEPTIONS = '__filterCatchExceptions__';
 /**以下四个分别用于存储管道、守卫、拦截器、异常过滤器的元数据 */
 export const PIPES_METADATA = '__pipes__';
+/**守卫 */
 export const GUARDS_METADATA = '__guards__';
+/**拦截器 */
 export const INTERCEPTORS_METADATA = '__interceptors__';
+/**异常过滤器 */
 export const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';
 /**将增强器键（如守卫、拦截器等）映射到其子类型，用于框架内部处理 */
 export const ENHANCER_KEY_TO_SUBTYPE_MAP = {
@@ -73,9 +76,12 @@ export const HEADERS_METADATA = '__headers__';
 export const REDIRECT_METADATA = '__redirect__';
 export const RESPONSE_PASSTHROUGH_METADATA = '__responsePassthrough__';
 export const SSE_METADATA = '__sse__';
+/**标注版本号 */
 export const VERSION_METADATA = '__version__';
 /**这些常量用于标记类或提供者的特定角色或特性，如可注入的、控制器、异常过滤器、入口提供者等 */
 export const INJECTABLE_WATERMARK = '__injectable__';
+/**标注一个类为controller */
 export const CONTROLLER_WATERMARK = '__controller__';
+/**标注一个类为异常过滤器 */
 export const CATCH_WATERMARK = '__catch__';
 export const ENTRY_PROVIDER_WATERMARK = '__entryProvider__';

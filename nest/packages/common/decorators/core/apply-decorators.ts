@@ -6,6 +6,7 @@
  * @param decorators one or more decorators (e.g., `ApplyGuard(...)`)
  *
  * @publicApi
+ * 用于构建新的装饰器(或装饰器工厂)，封装与相同特性相关的多个装饰器
  */
 export function applyDecorators(
   ...decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator>
@@ -16,10 +17,12 @@ export function applyDecorators(
     descriptor?: TypedPropertyDescriptor<Y>,
   ) => {
     for (const decorator of decorators) {
+      /**类修饰器 */
       if (target instanceof Function && !descriptor) {
         (decorator as ClassDecorator)(target);
         continue;
       }
+      // 方法或者属性修饰器
       (decorator as MethodDecorator | PropertyDecorator)(
         target,
         propertyKey,

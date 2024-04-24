@@ -46,6 +46,7 @@ export interface HeaderVersioningOptions {
   type: VersioningType.HEADER;
   /**
    * The name of the Request Header that contains the version.
+   * 包含版本号的请求头名称
    */
   header: string;
 }
@@ -74,6 +75,7 @@ export interface MediaTypeVersioningOptions {
    * The key within the Media Type Header to determine the version from.
    *
    * Ex. For `application/json;v=1`, the key is `v=`.
+   * 在媒体类型头部中版本号对应的键名称
    */
   key: string;
 }
@@ -87,7 +89,7 @@ export interface CustomVersioningOptions {
   /**
    * A function that accepts a request object (specific to the underlying platform, ie Express or Fastify)
    * and returns a single version value or an ordered array of versions, in order from HIGHEST to LOWEST.
-   *
+   *接受一个请求对象，
    * Ex. Returned version array = ['3.1', '3.0', '2.5', '2', '1.9']
    *
    * Use type assertion or narrowing to identify the specific request type.
@@ -101,6 +103,7 @@ export interface CustomVersioningOptions {
 interface VersioningCommonOptions {
   /**
    * The default version to be used as a fallback when you did not provide some
+   * // 默认版本用于当没有提供版本号时，作为一个回退处理
    * version to `@Controller()` nor `@Version()`.
    */
   defaultVersion?: VersionOptions['version'];

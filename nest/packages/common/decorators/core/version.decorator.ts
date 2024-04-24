@@ -8,7 +8,7 @@ import { VersionValue } from '../../interfaces/version-options.interface';
  */
 export function Version(version: VersionValue): MethodDecorator {
   if (Array.isArray(version)) {
-    // Drop duplicated versions
+    // Drop duplicated versions 去重
     version = Array.from(new Set(version));
   }
 
