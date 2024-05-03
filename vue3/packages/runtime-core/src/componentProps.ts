@@ -71,16 +71,33 @@ export interface PropOptions<T = any, D = T> {
 export type PropType<T> = PropConstructor<T> | PropConstructor<T>[]
 
 type PropConstructor<T = any> =
+/**表示一个构造签名，这里的语法定义了一个可以通过new关键字来实例化
+ * 的类型，其构造函数可以接受任意数量的参数，并且构造出的实例类型为T。
+ * 交叉类型T & {}用于确保T至少是一个对象类型。
+ * 
+ * 用于确保定义的类型T是可以通过new 实例化的，并且是一个对象类型
+ */
   | { new (...args: any[]): T & {} }
+  /**用于定一个prop可以是一个返回特定类型的T的普通函数 */
   | { (): T }
+  /**表示可以是普通函数，也可以作为一个构造函数 */
   | PropMethod<T>
 
+  /** 用于定义prop的类型不仅可以是一个返回类型为T普通的函数，也可以作为一个构造函数被使用*/
 type PropMethod<T, TConstructor = any> = [T] extends [
   ((...args: any) => any) | undefined
 ] // if is function with args, allowing non-required functions
+/**
+ * 如果函数带有参数，那么这些参数也可以是非必须的
+ * callback: {
+      type: Function as PropType<(message?: string) => void>,
+      default: () => (message?: string) => console.log(message || "No message provided")
+    }
+ * 
+ */
   ? { new (): TConstructor; (): T; readonly prototype: TConstructor } // Create Function like constructor
   : never
-
+/**必传键 */
 type RequiredKeys<T> = {
   [K in keyof T]: T[K] extends
     | { required: true }
