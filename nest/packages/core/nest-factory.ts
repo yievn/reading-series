@@ -77,7 +77,8 @@ export class NestFactoryStatic {
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
-    /**如果serverOrOptions是HTTPServer，那么就直接给到httpServer，否则，创建一个默认的HTTPServer（默认是express服务） */
+    /**如果serverOrOptions是HTTPServer，那么就直接给到httpServer，
+     * 否则，创建一个默认的HTTPServer（默认是express服务） */
     const [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
       ? [serverOrOptions, options]
       : [this.createHttpAdapter(), serverOrOptions];
@@ -85,6 +86,7 @@ export class NestFactoryStatic {
     const applicationConfig = new ApplicationConfig();
     /**根据配置对象创建一个nest容器 */
     const container = new NestContainer(applicationConfig);
+
     const graphInspector = this.createGraphInspector(appOptions, container);
 
     this.setAbortOnError(serverOrOptions, options);
@@ -112,7 +114,7 @@ export class NestFactoryStatic {
 
   /**
    * Creates an instance of NestMicroservice.
-   *
+   * 创建一个微服务实例
    * @param moduleCls Entry (root) application module class
    * @param options Optional microservice configuration
    *
@@ -256,13 +258,15 @@ export class NestFactoryStatic {
       set: proxy,
     });
   }
-
+  /**对 target中的方法调用包裹上一层异常拦截*/
   private createExceptionProxy() {
     return (receiver: Record<string, any>, prop: string) => {
+      /**如果prop不是recerver的属性 */
       if (!(prop in receiver)) {
         return;
       }
       if (isFunction(receiver[prop])) {
+        /**如果receiver[prop]是一个函数 */
         return this.createExceptionZone(receiver, prop);
       }
       return receiver[prop];
@@ -301,6 +305,7 @@ export class NestFactoryStatic {
     this.autoFlushLogs = autoFlushLogs ?? true;
   }
 
+  /**创建适配器，默认使用 express*/
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
     const { ExpressAdapter } = loadAdapter(
       '@nestjs/platform-express',
@@ -309,7 +314,7 @@ export class NestFactoryStatic {
     );
     return new ExpressAdapter(httpServer);
   }
-  /**是否俄日HTTP服务器 */
+  /**是否是HTTP服务器 */
   private isHttpServer(
     serverOrOptions: AbstractHttpAdapter | NestApplicationOptions,
   ): serverOrOptions is AbstractHttpAdapter {
