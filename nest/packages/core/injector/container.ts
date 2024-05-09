@@ -58,7 +58,7 @@ export class NestContainer {
   get serializedGraph(): SerializedGraph {
     return this._serializedGraph;
   }
-  // 返回用用配置
+  // 返回应用配置
   get applicationConfig(): ApplicationConfig | undefined {
     return this._applicationConfig;
   }

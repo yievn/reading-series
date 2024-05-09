@@ -13,7 +13,7 @@ export const MODULE_METADATA = {
  */
 export const GLOBAL_MODULE_METADATA = '__module:global__';
 /**
- * 以下两个分别用于存储主机和路劲的元数据，通常用于定义路由和控制器的行为
+ * 以下两个分别用于存储宿主和路径的元数据，通常用于定义路由和控制器的行为
  */
 export const HOST_METADATA = 'host';
 export const PATH_METADATA = 'path';
@@ -57,7 +57,12 @@ export const GUARDS_METADATA = '__guards__';
 export const INTERCEPTORS_METADATA = '__interceptors__';
 /**异常过滤器 */
 export const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';
-/**将增强器键（如守卫、拦截器等）映射到其子类型，用于框架内部处理 */
+/**将增强器键（如守卫、拦截器等）映射到其子类型，用于框架内部处理
+ * 
+ * 用于标识和管理不同类型的增强器（如守卫、拦截器等）的键值。在框架或应用程序中，增强器通常用于对
+ * 请求或响应进行处理、拦截或增强，以实现特定的功能或逻辑。通过增强器键，可以将不同类型的增强器进行分类和区分，
+ * 以便在处理请求时能够准确识别和应用响应的增强器。
+ */
 export const ENHANCER_KEY_TO_SUBTYPE_MAP = {
   [GUARDS_METADATA]: 'guard',
   [INTERCEPTORS_METADATA]: 'interceptor',
@@ -68,13 +73,28 @@ export const ENHANCER_KEY_TO_SUBTYPE_MAP = {
 export type EnhancerSubtype =
   (typeof ENHANCER_KEY_TO_SUBTYPE_MAP)[keyof typeof ENHANCER_KEY_TO_SUBTYPE_MAP];
 
-
+/**用于存储渲染模版的元数据信息，在处理HTTP请求时，可以使用
+ * 这个常量来标识和管理与渲染模版相关的信息
+ */
 export const RENDER_METADATA = '__renderTemplate__';
+/**
+ * 用于存储HTTP响应状态码的元数据信息，在处理HTTP请求时，
+ * 可以使用这个常量来存储和传递响应的状态码，以便控制和定制HTTP响应的状态
+ */
 export const HTTP_CODE_METADATA = '__httpCode__';
+/**用于存储模块的路径信息。这个常量可以在模块加载和路由处理
+ * 等场景中使用，用于表示和管理模块的路径信息
+ */
 export const MODULE_PATH = '__module_path__';
+/**用于存储HTTP响应头信息，在处理HTTP请求时，可以使用这个常量来存储和传递响应头信息，以便控制
+ * 和定制HTTP响应的头部内容
+ */
 export const HEADERS_METADATA = '__headers__';
+/**用于存储重定向信息，在处理HTPP请求时，可以使用这个常量来存储重定向的目标路径，以便在需要时进行页面重定向操作 */
 export const REDIRECT_METADATA = '__redirect__';
+/**用于标识响应是否需要直接透传，在处理HTTP请求时，可以使用这个常量来标识响应是否需要直接透传给客户端，而不做其他处理 */
 export const RESPONSE_PASSTHROUGH_METADATA = '__responsePassthrough__';
+/**用于标识服务器发送事件（Server-Sent Events）的元数据信息，在处理HTTP请求和管理服务器发送事件的相关逻辑 */
 export const SSE_METADATA = '__sse__';
 /**标注版本号 */
 export const VERSION_METADATA = '__version__';
@@ -84,4 +104,5 @@ export const INJECTABLE_WATERMARK = '__injectable__';
 export const CONTROLLER_WATERMARK = '__controller__';
 /**标注一个类为异常过滤器 */
 export const CATCH_WATERMARK = '__catch__';
+/**用于标识一个类为入口提供者的常量，表示该类具有特定的角色或特性，在框架中可能会被用于特殊处理或识别 */
 export const ENTRY_PROVIDER_WATERMARK = '__entryProvider__';

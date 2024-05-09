@@ -85,6 +85,7 @@ export class NestFactoryStatic {
     const applicationConfig = new ApplicationConfig();
     /**根据配置对象创建一个nest容器 */
     const container = new NestContainer(applicationConfig);
+    // 
     const graphInspector = this.createGraphInspector(appOptions, container);
 
     this.setAbortOnError(serverOrOptions, options);
