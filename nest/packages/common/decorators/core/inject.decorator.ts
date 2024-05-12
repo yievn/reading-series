@@ -42,8 +42,9 @@ export function Inject<T = any>(
 ): PropertyDecorator & ParameterDecorator {
   return (target: object, key: string | symbol | undefined, index?: number) => {
     const type = token || Reflect.getMetadata('design:type', target, key);
-    
+    /**作为参数装饰器 */
     if (!isUndefined(index)) {
+      /**获取自声明依赖集合 */
       let dependencies =
         Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, target) || [];
 

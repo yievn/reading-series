@@ -13,23 +13,28 @@ export const MODULE_METADATA = {
  */
 export const GLOBAL_MODULE_METADATA = '__module:global__';
 /**
- * 以下两个分别用于存储宿主和路径的元数据，通常用于定义路由和控制器的行为
+ * 用于存储宿主的元数据信息，通常用于定义路由和控制器行为，可以标识和管理数组相关的信息
  */
 export const HOST_METADATA = 'host';
+/**用于存储路径的元数据信息，也用于定义路由和控制器的行为 ，标识和管理路径信息 */
 export const PATH_METADATA = 'path';
 
 
 // 依赖注入相关
 /**
- *  存储构造函数参数的类型，用于依赖注入时解析参数类型
+ *  用于存储构造函数参数的类型，主要用于依赖注入时解析参数类型。通过
+ * 它可以在运行时获取构造函数参数的类型，以便进行依赖注入时的参数解析和处理
  */
 export const PARAMTYPES_METADATA = 'design:paramtypes';
 /**
- * 存储自声明的依赖项，即明确指定的依赖项，而不是通过类型推断得到的
+ * 存储自声明的依赖项，即明确指定的依赖项，而不是通过类型推断得到的。
+ * 通过它可以标识和管理在代码中显示声明的依赖项，以确保依赖注入时能够准确识别和应用这些依赖项
  */
 export const SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';
 /**
- * 标记依赖项为可选，即在依赖项无法解析时不会抛出错误
+ * 标记依赖项为可选，即在依赖项无法解析时不会抛出错误。
+ * 通过它可以指示系统在处理依赖注入时，对于标记为可选的依赖项，
+ * 即使无法解析也不会导致错误，提高代码的容错性和灵活性
  */
 export const OPTIONAL_DEPS_METADATA = 'optional:paramtypes';
 
