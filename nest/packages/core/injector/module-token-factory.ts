@@ -7,7 +7,9 @@ import stringify from 'fast-safe-stringify';
 
 const CLASS_STR = 'class ';
 const CLASS_STR_LEN = CLASS_STR.length;
-
+/**
+ * ModuleTokenFactory主要为了生成和管理模块的标识符，这些标识符
+ */
 export class ModuleTokenFactory {
   private readonly moduleTokenCache = new Map<string, string>();
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
@@ -54,6 +56,7 @@ export class ModuleTokenFactory {
     if (moduleId) {
       return moduleId;
     }
+    // 生成随机字符串
     moduleId = randomStringGenerator();
     this.moduleIdsCache.set(metatype, moduleId);
     return moduleId;
@@ -62,7 +65,7 @@ export class ModuleTokenFactory {
   public getModuleName(metatype: Type<any>): string {
     return metatype.name;
   }
-
+  // 创建hash字符串
   private hashString(value: string): string {
     return createHash('sha256').update(value).digest('hex');
   }

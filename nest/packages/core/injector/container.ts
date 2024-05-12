@@ -25,41 +25,56 @@ import { ModulesContainer } from './modules-container';
 type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
 type ModuleScope = Type<any>[];
 
+/**
+ * NestContainer类是Nest框架的核心部分，负责管理和维护整个应用的模块、提供者、控制器等。
+ * 它是一个依赖注入容器，用于实例化和存储应用中的所有依赖项
+ */
 export class NestContainer {
+  /**存储全局模块的集合。全局模块在整个应用中共享无需在每个模块中单独导入 */
   private readonly globalModules = new Set<Module>();
+  /**用于生成模块标识符的工厂实例 */
   private readonly moduleTokenFactory = new ModuleTokenFactory();
+  /**编译模块的实例，用于处理模块的元数据和依赖 */
   private readonly moduleCompiler = new ModuleCompiler(this.moduleTokenFactory);
+  /**存储所有模块的容器 */
   private readonly modules = new ModulesContainer();
+  /**存储动态模块元数据的映射 */
   private readonly dynamicModulesMetadata = new Map<
     string,
     Partial<DynamicModule>
   >();
+  /** */
   private readonly internalProvidersStorage = new InternalProvidersStorage();
+  /**存储序列化的依赖图 */
   private readonly _serializedGraph = new SerializedGraph();
+  /**存储内部核心模块的引用 */
   private internalCoreModule: Module;
 
   constructor(
+    /**存储应用配置 */
     private readonly _applicationConfig: ApplicationConfig = undefined,
   ) {}
-
+/**返回序列化的依赖图 */
   get serializedGraph(): SerializedGraph {
     return this._serializedGraph;
   }
-
+  // 返回应用配置
   get applicationConfig(): ApplicationConfig | undefined {
     return this._applicationConfig;
   }
-
+  // 设置HTTP适配器
   public setHttpAdapter(httpAdapter: any) {
+    /**设置当前适配器 */
     this.internalProvidersStorage.httpAdapter = httpAdapter;
 
+    /**确保在调用以下host.httpAdapter时不会出错 */
     if (!this.internalProvidersStorage.httpAdapterHost) {
       return;
     }
     const host = this.internalProvidersStorage.httpAdapterHost;
     host.httpAdapter = httpAdapter;
   }
-
+  /**获取当前适配器引用 */
   public getHttpAdapterRef() {
     return this.internalProvidersStorage.httpAdapter;
   }

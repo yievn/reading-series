@@ -20,6 +20,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
   constructor(
     private readonly routesMapper: RoutesMapper,
+    /**http服务 */
     private readonly httpAdapter: HttpServer,
     private readonly routeInfoPathExtractor: RouteInfoPathExtractor,
   ) {}

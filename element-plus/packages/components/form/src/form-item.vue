@@ -82,25 +82,30 @@ defineOptions({
 })
 const props = defineProps(formItemProps)
 const slots = useSlots()
-
+/**form上下文 */
 const formContext = inject(formContextKey, undefined)
+/**可能在formItem上还有formItem，获取父级formItem的上下文 */
 const parentFormItemContext = inject(formItemContextKey, undefined)
-
+/**获取尺寸 */
 const _size = useFormSize(undefined, { formItem: false })
 const ns = useNamespace('form-item')
 
 const labelId = useId().value
 const inputIds = ref<string[]>([])
-
+/**校验状态 */
 const validateState = ref<FormItemValidateState>('')
+/**校验防抖 */
 const validateStateDebounced = refDebounced(validateState, 100)
+/**校验信息 */
 const validateMessage = ref('')
+/**formItem引用 */
 const formItemRef = ref<HTMLDivElement>()
 // special inline value.
 let initialValue: any = undefined
 let isResettingField = false
 
 const labelStyle = computed<CSSProperties>(() => {
+  /**位置在上方，忽略宽度 */
   if (formContext?.labelPosition === 'top') {
     return {}
   }
@@ -187,8 +192,9 @@ const normalizedRules = computed(() => {
   if (props.rules) {
     rules.push(...ensureArray(props.rules))
   }
-
+  /**给到form中的全体规则表 */
   const formRules = formContext?.rules
+  /**从form rules中获取规则 */
   if (formRules && props.prop) {
     const _rules = getProp<Arrayable<FormItemRule> | undefined>(
       formRules,

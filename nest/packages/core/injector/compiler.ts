@@ -28,6 +28,7 @@ export class ModuleCompiler {
     type: Type<any>;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
   } {
+    // 不是动态模块
     if (!this.isDynamicModule(metatype)) {
       return {
         type: (metatype as ForwardReference)?.forwardRef
@@ -35,6 +36,7 @@ export class ModuleCompiler {
           : metatype,
       };
     }
+    // 动态模块
     const { module: type, ...dynamicMetadata } = metatype;
     return { type, dynamicMetadata };
   }
@@ -42,6 +44,7 @@ export class ModuleCompiler {
   public isDynamicModule(
     module: Type<any> | DynamicModule | ForwardReference,
   ): module is DynamicModule {
+    // 判断是否存在module属性，存在即为动态模块
     return !!(module as DynamicModule).module;
   }
 }

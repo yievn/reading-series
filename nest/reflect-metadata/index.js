@@ -198,9 +198,11 @@ var Reflect;
          */
         function metadata(metadataKey, metadataValue) {
             function decorator(target, propertyKey) {
-                if (!IsObject(target)) // target必须为对象
+                if (!IsObject(target)) 
+                    // target必须为对象
                     throw new TypeError();
-                if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey)) // propertyKey存在但是非字符串或者symbol类型
+                if (!IsUndefined(propertyKey) && !IsPropertyKey(propertyKey)) 
+                    // propertyKey存在但不是字符串或者symbol类型
                     throw new TypeError();
                     
                 OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, propertyKey);
@@ -301,6 +303,7 @@ var Reflect;
         }
         exporter("hasMetadata", hasMetadata);
         /**
+         * 获取一个值，该值指示目标对象是否定义了提供的元数据键
          * Gets a value indicating whether the target object has the provided metadata key defined.
          * @param metadataKey A key used to store and retrieve metadata.
          * @param target The target object on which the metadata is defined.
@@ -593,15 +596,18 @@ var Reflect;
          * 
          * 对于DecorateProperty中的decorators，使用的都是相同的target和propertyKey，但是
          * descriptor可以做出修改
+         * 
+         * 如果执行decorator时，没有返回描述符，那就用最初DecorateProperty传入的描述符提供给后面decorator座位参数
          */
         function DecorateProperty(decorators, target, propertyKey, descriptor) {
             for (var i = decorators.length - 1; i >= 0; --i) {
                 var decorator = decorators[i];
                 var decorated = decorator(target, propertyKey, descriptor);
-                /**decorated必须存在并且是对象，作为新的描述对象 */
+                /**decorated如果不是null或者undefined，那么它就必须是对象，不然报错 */
                 if (!IsUndefined(decorated) && !IsNull(decorated)) {
                     if (!IsObject(decorated))
                         throw new TypeError();
+                    // decorated是对象，则赋给descriptor
                     descriptor = decorated;
                 }
             }
@@ -685,7 +691,7 @@ var Reflect;
                 return OrdinaryGetMetadata(MetadataKey, parent, P);
             return undefined;
         }
-        // 获取在
+        // 获取在指定对象上属性的元数据
         function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
             var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
             if (IsUndefined(metadataMap))
@@ -699,18 +705,19 @@ var Reflect;
             metadataMap.set(MetadataKey, MetadataValue);
         }
         // 3.1.6.1 OrdinaryMetadataKeys(O, P)
+        // 获取当前对象及其原型链上的所有MetadataKey
         // https://rbuckton.github.io/reflect-metadata/#ordinarymetadatakeys
         function OrdinaryMetadataKeys(O, P) {
             var ownKeys = OrdinaryOwnMetadataKeys(O, P);
             var parent = OrdinaryGetPrototypeOf(O);
-            if (parent === null)
+            if (parent === null) // 不存在原型对象
                 return ownKeys;
             var parentKeys = OrdinaryMetadataKeys(parent, P);
-            if (parentKeys.length <= 0)
+            if (parentKeys.length <= 0) // 原型对象上的MetadataKey数量为0
                 return ownKeys;
-            if (ownKeys.length <= 0)
+            if (ownKeys.length <= 0) // 当前对象上的MetadataKey数量为0
                 return parentKeys;
-            var set = new _Set();
+            var set = new _Set(); // 去重
             var keys = [];
             for (var _i = 0, ownKeys_1 = ownKeys; _i < ownKeys_1.length; _i++) {
                 var key = ownKeys_1[_i];
@@ -731,6 +738,7 @@ var Reflect;
             return keys;
         }
         // 3.1.7.1 OrdinaryOwnMetadataKeys(O, P)
+        // 获取当前对象上的MetadataKey
         // https://rbuckton.github.io/reflect-metadata/#ordinaryownmetadatakeys
         function OrdinaryOwnMetadataKeys(O, P) {
             var keys = [];
