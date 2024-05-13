@@ -16,7 +16,8 @@ export enum Scope {
   TRANSIENT,
   /**
    * A new instance is instantiated for each request processing pipeline
-   * 对于每个进入的请求，Nest回创建一个新的提供者实例。这对处理请求特定的数据很有用，但可能会增加内存使用和处理时间
+   * 对于每个进入的请求，Nest会创建一个新的提供者实例。这对处理请求特定的数据很有用，
+   * 但可能会增加内存使用和处理时间
    */
   REQUEST,
 }
@@ -36,6 +37,13 @@ export interface ScopeOptions {
    * factory strategy to construct lazy DI subtrees.
    *
    * This flag can be used only in conjunction with scope = Scope.REQUEST.
+   * 用于标记一个提供者是否为持久的，这个选项只能与Scope.REQUEST作用域一起使用
+   * 
+   * 当durable设置为true时，它允许在请求作用域的提供者中构建延迟的依赖注入（DI）子树。这意味着即使在请求处理完成后，
+   * 这些特定的提供者实例也不会立即被销毁，而是可以持续存在更长的时间，直到它们不再被需要。
+   * 
+   * 应用场景：这种机制特别适合于那些需要跨多个请求保持状态，或者其创建和销毁成本较高的资源。例如，可以用于管理
+   * 数据库连接、大型数据结构、或者其他需要显著初始化开销的服务。
    */
   durable?: boolean;
 }
