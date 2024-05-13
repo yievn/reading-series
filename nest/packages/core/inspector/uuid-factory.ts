@@ -17,7 +17,9 @@ export class UuidFactory {
 
   static get(key = '') {
     return this._mode === UuidFactoryMode.Deterministic
+    /**根据字符串生成hash值 */
       ? DeterministicUuidRegistry.get(key)
+      /**返回随机hash字符串 */
       : randomStringGenerator();
   }
 }
