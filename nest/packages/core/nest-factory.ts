@@ -327,6 +327,7 @@ export class NestFactoryStatic {
     options?: NestApplicationContextOptions | NestApplicationOptions,
   ) {
     this.abortOnError = this.isHttpServer(serverOrOptions)
+    // 除非明确设置为false，否则都默认为true
       ? !(options && options.abortOnError === false)
       : !(serverOrOptions && serverOrOptions.abortOnError === false);
   }
@@ -364,6 +365,7 @@ export class NestFactoryStatic {
     appOptions: NestApplicationContextOptions,
     container: NestContainer,
   ) {
+    // 开启了创建依赖图的快照
     return appOptions?.snapshot
       ? new GraphInspector(container)
       : NoopGraphInspector;
