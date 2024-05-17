@@ -196,7 +196,10 @@ export class NestFactoryStatic {
   private createNestInstance<T>(instance: T): T {
     return this.createProxy(instance);
   }
-
+  /**
+   * 用于初始化nest应用，这个方法负责设置和启动整个应用的依赖注入系统、模块加载、实例化
+   * 等核心功能，它是在创建应用实例时被调用的，确保所有的模块和服务都被正确配置和启动。
+   */
   private async initialize(
     module: any,
     container: NestContainer,
@@ -205,28 +208,39 @@ export class NestFactoryStatic {
     options: NestApplicationContextOptions = {},
     httpServer: HttpServer = null,
   ) {
+    /**设置生成uuid的模式，如果options.snapshot为true，那么就用Deterministic模式，否则用Random */
     UuidFactory.mode = options.snapshot
       ? UuidFactoryMode.Deterministic
       : UuidFactoryMode.Random;
-
+    /**创建injector实例 */
     const injector = new Injector({ preview: options.preview });
+    /**创建InstanceLoader实例，用于加载和实例化模块中的提供者 */
     const instanceLoader = new InstanceLoader(
       container,
       injector,
       graphInspector,
     );
+    /**元数据扫描器实例 */
     const metadataScanner = new MetadataScanner();
+    /**以来扫描器实例 */
     const dependenciesScanner = new DependenciesScanner(
       container,
       metadataScanner,
       graphInspector,
       config,
     );
-    container.setHttpAdapter(httpServer);
 
+    /**为容器设置HTTP适配器 */
+    container.setHttpAdapter(httpServer);
+    /**
+     * 当abortOnError为false时，teardown为rethrow，表示出现异常时异常会被再次抛出
+     * 如果为true，则为undefined，不过在ExceptionsZone会使用process.exit(1)结束进程
+     */
     const teardown = this.abortOnError === false ? rethrow : undefined;
+
     await httpServer?.init();
     try {
+      /**打印日志，应用启动 */
       this.logger.log(MESSAGES.APPLICATION_START);
 
       await ExceptionsZone.asyncRun(
@@ -365,7 +379,7 @@ export class NestFactoryStatic {
     appOptions: NestApplicationContextOptions,
     container: NestContainer,
   ) {
-    // 开启了创建依赖图的快照
+    // 开启快照时创建一个图检查器
     return appOptions?.snapshot
       ? new GraphInspector(container)
       : NoopGraphInspector;
