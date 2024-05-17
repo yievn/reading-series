@@ -38,7 +38,6 @@ export const SELF_DECLARED_DEPS_METADATA = 'self:paramtypes';
  */
 export const OPTIONAL_DEPS_METADATA = 'optional:paramtypes';
 
-
 // 属性注入相关
 /**用于存储类属性的依赖项及其可选依赖项的元数据 */
 export const PROPERTY_DEPS_METADATA = 'self:properties_metadata';
