@@ -45,34 +45,45 @@ export type InjectorDependency = InjectionToken;
 
 /**
  * The property-based dependency
+ * 定义了属性注入时所需的依赖信息，在nest中，处理构造函数注入，还可以通过属性注入来提供依赖
  */
 export interface PropertyDependency {
+  /**属性的名称或符号，用于标识注入的目标属性 */
   key: symbol | string;
+  /**依赖的标识符，通常是一个类、字符串或符号，用于从依赖注入容器中检索实例 */
   name: InjectorDependency;
+  /**指示该依赖是否是可选的。如果为true，在依赖项不可用时不会抛出错误。 */
   isOptional?: boolean;
+  /**已解析的依赖项实例。这是在运行时填充的，表示已经从依赖注入系统中获取的实例 */
   instance?: any;
 }
 
 /**
  * Context of a dependency which gets injected by
  * the injector
+ * 提供一个通用的上下文环境，用于处理构造函数和属性注入的依赖解析，确保依赖项能够在正确的位置被注入，并处理可选依赖和
+ * 多重依赖的情况
  */
 export interface InjectorDependencyContext {
   /**
    * The name of the property key (property-based injection)
+   * 如果依赖是通过属性注入的，这里会是属性的名称或符号
    */
   key?: string | symbol;
   /**
    * The function itself, the name of the function, or injection token.
+   * 依赖项的标识符，可以是函数、字符串或符号，这通常是类本身或者用于查找依赖项的标记。
    */
   name?: Function | string | symbol;
   /**
    * The index of the dependency which gets injected
    * from the dependencies array
+   * 如果依赖项时通过构造函数注入的，这里会是参数在构造函数参数列表中的索引位置。
    */
   index?: number;
   /**
    * The dependency array which gets injected
+   * 依赖项数组，表示当前组件或服务所依赖的其他服务或组件
    */
   dependencies?: InjectorDependency[];
 }

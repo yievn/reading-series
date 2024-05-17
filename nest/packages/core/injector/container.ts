@@ -36,7 +36,7 @@ export class NestContainer {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
   /**编译模块的实例，用于处理模块的元数据和依赖 */
   private readonly moduleCompiler = new ModuleCompiler(this.moduleTokenFactory);
-  /**存储所有模块的容器 */
+  /**存储所有模块的容器，一个继承自Map的类的实例 */
   private readonly modules = new ModulesContainer();
   /**存储动态模块元数据的映射 */
   private readonly dynamicModulesMetadata = new Map<
