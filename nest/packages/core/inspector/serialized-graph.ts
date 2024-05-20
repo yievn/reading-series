@@ -97,6 +97,9 @@ export class SerializedGraph {
           edgeDefinition.metadata.targetClassToken,
         ))
     ) {
+      /**检查边的源类和目标类是否属于内部提供者（INTERNAL_PROVIDERS列表中的项）。如果是，将边的internal属性设置为true
+       * 表示这是一个内部依赖。
+       */
       edgeDefinition.metadata = {
         ...edgeDefinition.metadata,
         internal: true,
@@ -108,19 +111,30 @@ export class SerializedGraph {
       ...edgeDefinition,
       id,
     };
+    /**
+     * 使用边id作为健，将边对象存储到edges映射中，如果便已经存在，则更新；如果不存在，则添加
+     */
     this.edges.set(id, edge);
     return edge;
   }
-
+  /**用于向依赖图中添加一个入口店，入口点通常是模块的导出他们可以被其他模块导入和使用。 */
+  /**
+   * 
+   * @param definition 
+   * @param parentId 指的是导出点所属模块的唯一标识符或模块ID，在nestjs的依赖图中，每个模块都被视为一个
+   * 节点，具有一个唯一的标识符，即模块ID，这个ID用于标识和追踪模块之间的关系，包括他们的依赖和导出。
+   */
   public insertEntrypoint<T>(definition: Entrypoint<T>, parentId: string) {
+    /**如果有parentId对应的入口点集合，则将新的入口点归入到已存在的集合中 */
     if (this.entrypoints.has(parentId)) {
       const existingCollection = this.entrypoints.get(parentId);
       existingCollection.push(definition);
     } else {
+      /**新建一个集合 */
       this.entrypoints.set(parentId, [definition]);
     }
   }
-
+  
   public insertOrphanedEnhancer(entry: OrphanedEnhancerDefinition) {
     this.extras.orphanedEnhancers.push(entry);
   }

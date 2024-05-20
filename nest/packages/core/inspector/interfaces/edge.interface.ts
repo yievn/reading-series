@@ -44,3 +44,14 @@ export interface Edge {
   target: string;
   metadata: ModuleToModuleEdgeMetadata | ClassToClassEdgeMetadata;
 }
+
+
+/**
+ * 在nest中，当一个模块通过其providers数组注册提供者服务时，
+ * 这通常涉及到的是类到类的边类型，这是因为提供者通常是类，而
+ * 这些类可能会被模块中的其他类（如控制器或其他服务）依赖。
+ * 
+ * 当你在一个模块的providers数组中注册一个服务类时，你实际是在声明这个类
+ * 可以在该模块的上下文中被实例化和注入，如果其他类（在同一模块或导入了该模块的其他模块中的类）
+ * 依赖于这个服务，那么在依赖图中就会创建从依赖类到服务类的类到类的边
+ */
