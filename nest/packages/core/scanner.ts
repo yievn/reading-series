@@ -86,15 +86,20 @@ export class DependenciesScanner {
     module: Type<any>,
     options?: { overrides?: ModuleOverride[] },
   ) {
+    /**注册应用的核心模块，确保应用的基础服务可以在后续使用 */
     await this.registerCoreModule(options?.overrides);
+    /**递归地扫描和注册所有模块，这个方法接受一个模块定义，通常是跟模块，并递归处理所有导入的模块 */
     await this.scanForModules({
       moduleDefinition: module,
       overrides: options?.overrides,
     });
+    /**一旦所有模块都被扫描，则调用scanModulesForDependencies来扫描每个模块的依赖、提供者、控制器等依赖 */
     await this.scanModulesForDependencies();
+    /**计算模块之间的距离，这有助于确定模块加载和初始化的顺序 */
     this.calculateModulesDistance();
 
     this.addScopedEnhancersMetadata();
+    /**绑定全局作用域 */
     this.container.bindGlobalScope();
   }
 

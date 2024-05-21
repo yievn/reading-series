@@ -88,11 +88,20 @@ export interface InjectorDependencyContext {
   dependencies?: InjectorDependency[];
 }
 
+/**
+ * Injector类是一个核心组件，负责处理依赖注入（DI）的逻辑，它管理着如何解析和提供类实例
+ * 及其依赖，确保模块和服务能够正确地获取他们所需的依赖。
+ * 
+ * 依赖解析：负责解析和注入组件(如控制器、服务)的依赖
+ * 实例管理：管理应用中所有类的实例，包括他们的生命周期和作用域（如单例、请求作用域等）
+ * 模块隔离：确保模块间的依赖是隔离的，支持模块化架构
+ */
 export class Injector {
+  /**用于记录注入过程中的日志信息 */
   private logger: LoggerService = new Logger('InjectorLogger');
 
   constructor(private readonly options?: { preview: boolean }) {}
-
+  /**加载并缓存给定令牌的圆形，这是为了优化性能，避免在每次请求时都重新创建实例 */
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
     collection: Map<InjectionToken, InstanceWrapper<T>>,
