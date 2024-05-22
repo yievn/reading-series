@@ -84,7 +84,7 @@ export interface ClassProvider<T = any> {
  ValueProvider是实现依赖注入的一种方式，特别适用于那些不需要实例化的常量、配置对象或任何其他类型的静态数据。
 
 
- alueProvider 在多种场景下非常有用，特别是在以下情况：
+ ValueProvider 在多种场景下非常有用，特别是在以下情况：
 1. 配置数据：将配置数据或常量直接注入到应用的不同部分。例如，数据库连接字符串、应用密钥等。
 2. 外部库或框架的实例：如果你已经有了一个由外部库创建的实例（如数据库连接），你可以通过 ValueProvider 将其注入到你的 NestJS 应用中。
 3. 测试替代：在测试时，可以使用 ValueProvider 来提供模拟的值或对象，以便于测试。
@@ -98,6 +98,23 @@ export interface ValueProvider<T = any> {
    * Injection token
    * 这是一个标识符，用于在依赖注入系统中唯一标识这个提供者。它可以是一个字符串、符号或者一个类。当其他部分的代码请求
    * 这个依赖时，将使用这个标识符来查找对应的提供者。
+   * 
+   * 1、当provide是一个字符串时，它通常用作服务的唯一标识符，在系统中用来查找
+   * 和注入对应的值
+   * 
+   * 例：     { provide: 'API_URL', useValue: 'http://example.com' }
+   * 在这个例子中provide是一个字符串，用于在应用中注入http://example.com
+   * 
+   * 2、当使用Symbol作为provide的值可以提供一个不会与其它任何字符串键冲突的
+   * 唯一标识符，这在大型应用或库比较有用，避免命名冲突
+   * 
+   * 3、也可以使用类本身作为provide的值，这种方式通常用于替换类的实例或在测试中提供
+   * 模拟实现
+   * 
+   * 无论provide的值是什么类型，nest的依赖注入容器都会将其与useValue
+   * 指定的值关联起来，并存储在内部的提供者存储中，当应用的其它部分请求
+   * 这个依赖时，容器会查找与provide对应的标识符，并返回useValue中配置
+   * 的值
    */
   provide: InjectionToken;
   /**
