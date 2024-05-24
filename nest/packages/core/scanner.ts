@@ -562,13 +562,27 @@ export class DependenciesScanner {
 
     return this.insertModule(moduleDefinition, scope);
   }
-
+  /**
+   * 主要作用是在一个模块覆盖列表中查找与给定模块匹配的覆盖定义。
+   * 这是实现模块动态替换的关键步骤，允许在不修改原始模块代码的情况下，改变模块的行为或依赖。
+   */
   private getOverrideModuleByModule(
     module: ModuleDefinition,
     overrides: ModuleOverride[],
   ): ModuleOverride | undefined {
+    /**
+     * 检查传入的module是否是一个正向引用ForwardReference（正向引用是一种特殊的模块定义，
+     * 允许模块在定义时引用尚未完全定义的模块，这在处理循环依赖时非常有用）
+     */
     if (this.isForwardReference(module)) {
       return overrides.find(moduleToOverride => {
+        /**
+         * 如果 module 是正向引用，查找 moduleToReplace
+         *  属性等于 module.forwardRef() 返回的模块，
+         * 或者 moduleToReplace 也是正向引用且与 
+         * module.forwardRef() 相等的覆盖定义。
+         */
+
         return (
           moduleToOverride.moduleToReplace === module.forwardRef() ||
           (
@@ -577,7 +591,7 @@ export class DependenciesScanner {
         );
       });
     }
-
+    /**如果 module 不是正向引用，直接查找 moduleToReplace 属性等于 module 的覆盖定义。 */
     return overrides.find(
       moduleToOverride => moduleToOverride.moduleToReplace === module,
     );
@@ -747,6 +761,7 @@ export class DependenciesScanner {
     return !!Reflect.getMetadata(CATCH_WATERMARK, metatype);
   }
 
+  /**模块是否为正向引用 */
   private isForwardReference(
     module: ModuleDefinition,
   ): module is ForwardReference {
