@@ -625,6 +625,7 @@ export class DependenciesScanner {
   }
 
   public async registerCoreModule(overrides?: ModuleOverride[]) {
+    /**返回一个包含内部核心提供者的动态模块 */
     const moduleDefinition = InternalCoreModuleFactory.create(
       this.container,
       this,
