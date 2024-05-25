@@ -15,24 +15,39 @@ import { InternalCoreModule } from './internal-core-module';
 
 export class InternalCoreModuleFactory {
   static create(
+    /**模块容器 */
     container: NestContainer,
+    /**模块扫描器实例 */
     scanner: DependenciesScanner,
+    /**模块元数据提取器 */
     moduleCompiler: ModuleCompiler,
+    /**http适配器托管实例 */
     httpAdapterHost: HttpAdapterHost,
+    /**依赖关系图检查器 */
     graphInspector: GraphInspector,
+    /**覆盖模块数组 */
     moduleOverrides?: ModuleOverride[],
   ) {
+    /** */
     const lazyModuleLoaderFactory = () => {
+      /**创建一个日志记录器实例，用于记录与懒加载模块相关的日志细腻 */
       const logger = new Logger(LazyModuleLoader.name, {
         timestamp: false,
       });
+      /**创建一个Injector实例，这是nest的依赖注入系统的核心部分，用于解析依赖项和实例化提供者 */
       const injector = new Injector();
+      /**创建一个InstanceLoader实例，负责在应用启动时加载和实例化模块中的提供者 */
       const instanceLoader = new InstanceLoader(
+        /**模块容器 */
         container,
+        /**依赖注入器 */
         injector,
+        /**依赖关系图检查器 */
         graphInspector,
+        /**日志记录器 */
         logger,
       );
+      /**返回一个LazyModuleLoader实例，它负责按需（懒加载）加载模块。 */
       return new LazyModuleLoader(
         scanner,
         instanceLoader,

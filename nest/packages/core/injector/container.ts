@@ -82,7 +82,7 @@ export class NestContainer {
   public getHttpAdapterHostRef() {
     return this.internalProvidersStorage.httpAdapterHost;
   }
-
+ 
   public async addModule(
     metatype: ModuleMetatype,
     scope: ModuleScope,
