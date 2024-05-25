@@ -110,6 +110,7 @@ export class DependenciesScanner {
     ctxRegistry = [],
     overrides = [],
   }: ModulesScanParameters): Promise<Module[]> {
+    /** */
     const { moduleRef: moduleInstance, inserted: moduleInserted } =
       (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
       {};
@@ -548,10 +549,12 @@ export class DependenciesScanner {
       }
     | undefined
   > {
+    /**在模块定义中存在与模块覆盖列表匹配的模块 */
     const overrideModule = this.getOverrideModuleByModule(
       moduleDefinition,
       overrides,
     );
+    /**存在匹配的模块，使用新模块 */
     if (overrideModule !== undefined) {
       return this.overrideModule(
         moduleDefinition,
