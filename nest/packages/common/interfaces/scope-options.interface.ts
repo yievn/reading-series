@@ -11,7 +11,7 @@ export enum Scope {
   DEFAULT,
   /**
    * A new private instance of the provider is instantiated for every use
-   * 转换作用域：转换作用域提供者在每次微任务队列（例如，异步操作或定时器）被清空时被实例化。这种作用域在处理特定类型的异步操作时很有用
+   * 瞬态作用域：瞬态作用域提供者在每次微任务队列（例如，异步操作或定时器）被清空时被实例化。这种作用域在处理特定类型的异步操作时很有用
    */
   TRANSIENT,
   /**

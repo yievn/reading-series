@@ -32,51 +32,105 @@ export interface HostComponentInfo {
    */
   isTreeDurable: boolean;
 }
-
+/**
+ * 用于标识特定请求或其他执行上下文，在nest中，每个请求可以有自己的依赖实例，这是通过与每个请求关联一个唯一的ContextId来实现的
+ * 
+ */
 export interface ContextId {
+  /**唯一的标识符，通常是一个数字 */
   readonly id: number;
+  /**用于存储于上下文相关的额外数据 */
   payload?: unknown;
+  /**用于获取父上下文的ContextID，这在处理嵌套的请求或依赖时非常有用 */
   getParent?(info: HostComponentInfo): ContextId;
 }
-
+/**
+ * 用于存储和管理在特定上下文（如请求作用域）中创建的实例
+ */
 export interface InstancePerContext<T> {
+  /**存储的实例对象 */
   instance: T;
+  /**标记实例是否已经完全解析和初始化 */
   isResolved?: boolean;
+  /**标记实例的解析是否正在进行 */
   isPending?: boolean;
+  /**如果实例是异步解析的，这里会存储一个promise，用于跟踪实例的解析状态 */
   donePromise?: Promise<unknown>;
 }
-
+/**
+ * 用于存储关于类属性注入的元数据
+ */
 export interface PropertyMetadata {
+  /**属性的名称或符号 */
   key: symbol | string;
+  /**与属性关联的 InstanceWrapper对象，它封装了应该注入到该属性的依赖实例*/
   wrapper: InstanceWrapper;
 }
-
+/**
+ * 它作为一个容器，用于存储于一个实例相关搞得所有元数据，包括依赖、属性注入和增强器（如拦截器和过滤器）
+ */
 interface InstanceMetadataStore {
+  /**一个InstanceWrapper实例数组，存储实例的构造函数依赖 */
   dependencies?: InstanceWrapper[];
+  /**一个PropertyMetadata数组，存储需要通过属性注入的依赖 */
   properties?: PropertyMetadata[];
+  /**一个InstanceWrapper数组，存储应用于该实例的增强器 */
   enhancers?: InstanceWrapper[];
 }
 
+/**
+ * 用于封装和管理单个实例（如提供者、控制器等）的元数据和生命周期
+ * 
+ * 1、封装实例：InstanceWrapper封装了一个特定的实例及其相关的元数据，如依赖、属性和是否是异步提供者等；
+ * 2、依赖管理：它管理实例的依赖，确保在创建实例之前，所有必须的依赖都已正确解析和注入。
+ * 3、生命周期管理：管理实例的生命周期时间，如初始化和销毁。
+ * 4、作用域处理：处理不同作用域（如单例、请求作用域）下的实例创建和缓存 
+ */
 export class InstanceWrapper<T = any> {
+  /**实例的名称 */
   public readonly name: any;
+  /**实例的唯一标识符，用于在依赖注入容器中索引和检索实例 */
   public readonly token: InjectionToken;
+  /**标记实例是否是异步提供者 */
   public readonly async?: boolean;
+  /**指向包含此实例的模块的引用 */
   public readonly host?: Module;
+  /**标记此实例是否作为别名提供 */
   public readonly isAlias: boolean = false;
+  /**实例的子类型，用于进一步分类实例类型 */
   public readonly subtype?: EnhancerSubtype;
+  /**实例的作用域（如DEFAULT、REQUEST） */
   public scope?: Scope = Scope.DEFAULT;
+  /**实例的元类型，即类本身 */
   public metatype: Type<T> | Function;
+  /**如果实例是通过工厂函数创建的，则此属性包含工厂函数的依赖 */
   public inject?: FactoryProvider['inject'];
+  /**实例是否存在正向引用，用于处理循环依赖 */
   public forwardRef?: boolean;
+  /**标记实例是否持久化 */
   public durable?: boolean;
+  /**实例初始化的时间戳 */
   public initTime?: number;
+  /**用于处理异步实例初始化的信号 */
   public settlementSignal?: SettlementSignal;
 
   private static logger: LoggerService = new Logger(InstanceWrapper.name);
 
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
+  /**存储了与实例相关的所有元数据，包括依赖、属性注入的元数据和增强器（拦截器和过滤器）。
+   * 通过使用Symbol作为键，可以确保这个元数据存储不会与实例的其它属性冲突或被意外访问，从而提供了一种
+   * 安全的方式来封装和管理这些内部信息
+   */
   private readonly [INSTANCE_METADATA_SYMBOL]: InstanceMetadataStore = {};
+  /**INSTANCE_ID_SYMBOL作为属性键，用来指向实例的唯一标识符（通常是一个字符串）。这个唯一标识符用于在依赖注入
+   * 容器中索引和检索实例，使用Symbol作为键同样提供了一种安全的封装方式，防止实例的唯一标识符被外部访问或修改，确保了实例
+   * 管理的一致性和安全性。
+   */
   private readonly [INSTANCE_ID_SYMBOL]: string;
+  /**transientMap是一个用于管理瞬态（TRANSIENT）作用域实例的数据结构
+   * 瞬态作用域意味着每次依赖注入时都会创建一个新的实例，而不是共享一个单例，这种作用域对于那些需要
+   * 独立状态或多个实例的服务非常有用
+   */
   private transientMap?:
     | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
     | undefined;
@@ -115,7 +169,7 @@ export class InstanceWrapper<T = any> {
   get isTransient(): boolean {
     return this.scope === Scope.TRANSIENT;
   }
-
+  /**根据上下文ID获取实例 */
   public getInstanceByContextId(
     contextId: ContextId,
     inquirerId?: string,
@@ -432,6 +486,7 @@ export class InstanceWrapper<T = any> {
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>>,
   ) {
     const { instance, isResolved, ...wrapperPartial } = metadata;
+    /**为InstanceWrapper实例属性赋值 */
     Object.assign(this, wrapperPartial);
 
     this.setInstanceByContextId(STATIC_CONTEXT, {
@@ -470,7 +525,7 @@ export class InstanceWrapper<T = any> {
   private isDebugMode(): boolean {
     return !!process.env.NEST_DEBUG;
   }
-
+  /**生成一个唯一的uuid，通常用于为实例生成一个唯一标识符 */
   private generateUuid(): string {
     let key = this.name?.toString() ?? this.token?.toString();
     key += this.host?.name ?? '';

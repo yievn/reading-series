@@ -23,6 +23,13 @@ import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
 
 type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
+/**
+ * 是一个类型定义，通常用来表示模块的作用域或者依赖模块的上下文，具体来说它是一个包含
+ * 类型（通常是类）的数组，这些类型代表了模块的依赖关系或者是模块在应用中层次结构。
+ * 
+ * ModuleScope用于定义一个模块在依赖注入系统中的上下文，在nest中，模块可以imports其他模块，形成一个层次化的结构。
+ * ModuleScope通常用来追踪这种结构，确保依赖注入时能正确解析依赖项。
+ */
 type ModuleScope = Type<any>[];
 
 /**
@@ -34,7 +41,7 @@ export class NestContainer {
   private readonly globalModules = new Set<Module>();
   /**用于生成模块标识符的工厂实例 */
   private readonly moduleTokenFactory = new ModuleTokenFactory();
-  /**编译模块的实例，用于处理模块的元数据和依赖 */
+  /**编译模块的实例，用于提取模块的类和元数据和token */
   private readonly moduleCompiler = new ModuleCompiler(this.moduleTokenFactory);
   /**存储所有模块的容器，一个继承自Map的类的实例 */
   private readonly modules = new ModulesContainer();
@@ -43,7 +50,7 @@ export class NestContainer {
     string,
     Partial<DynamicModule>
   >();
-  /** */
+  /**用于访问和配置内部http适配器 */
   private readonly internalProvidersStorage = new InternalProvidersStorage();
   /**存储序列化的依赖图 */
   private readonly _serializedGraph = new SerializedGraph();
@@ -98,11 +105,15 @@ export class NestContainer {
     if (!metatype) {
       throw new UndefinedForwardRefException(scope);
     }
+    /**提取模块对象上的类定义、元数据和token */
     const { type, dynamicMetadata, token } =
       await this.moduleCompiler.compile(metatype);
+    /**在模块容器中存在token对应的模块时，那就直接返回已经缓存过的模块引用 */
     if (this.modules.has(token)) {
       return {
+        /**模块实例引用 */
         moduleRef: this.modules.get(token),
+        /**表示已经被插入 */
         inserted: true,
       };
     }
@@ -158,15 +169,18 @@ export class NestContainer {
     { token, dynamicMetadata, type }: ModuleFactory,
     scope: ModuleScope,
   ): Promise<Module | undefined> {
+    /**将模块类进行实例化 */
     const moduleRef = new Module(type, this);
     moduleRef.token = token;
     moduleRef.initOnPreview = this.shouldInitOnPreview(type);
+    /**将模块类实例存储起来 */
     this.modules.set(token, moduleRef);
 
     const updatedScope = [].concat(scope, type);
     await this.addDynamicMetadata(token, dynamicMetadata, updatedScope);
-
+    /**当前模块是一个全局模块 */
     if (this.isGlobalModule(type, dynamicMetadata)) {
+      /**标记模块实例的isGlobal为true */
       moduleRef.isGlobal = true;
       this.addGlobalModule(moduleRef);
     }
@@ -194,7 +208,7 @@ export class NestContainer {
     }
     await Promise.all(modules.map(module => this.addModule(module, scope)));
   }
-
+  /**检查一个模块是否为一个全局模块 */
   public isGlobalModule(
     metatype: Type<any>,
     dynamicMetadata?: Partial<DynamicModule>,
@@ -204,11 +218,11 @@ export class NestContainer {
     }
     return !!Reflect.getMetadata(GLOBAL_MODULE_METADATA, metatype);
   }
-
+  /**将模块添加到全局模块的集合中 */
   public addGlobalModule(module: Module) {
     this.globalModules.add(module);
   }
-
+  /**返回存储所有模块的容器实例 */
   public getModules(): ModulesContainer {
     return this.modules;
   }
@@ -224,7 +238,7 @@ export class NestContainer {
   public getInternalCoreModuleRef(): Module | undefined {
     return this.internalCoreModule;
   }
-
+  /**将导入添加到 moduleRef中的_imports集合中*/
   public async addImport(
     relatedModule: Type<any> | DynamicModule,
     token: string,
@@ -232,6 +246,7 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       return;
     }
+    /**获取模块的引用 */
     const moduleRef = this.modules.get(token);
     const { token: relatedModuleToken } =
       await this.moduleCompiler.compile(relatedModule);
