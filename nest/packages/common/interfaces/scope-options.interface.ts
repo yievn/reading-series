@@ -11,7 +11,9 @@ export enum Scope {
   DEFAULT,
   /**
    * A new private instance of the provider is instantiated for every use
-   * 瞬态作用域：瞬态作用域提供者在每次微任务队列（例如，异步操作或定时器）被清空时被实例化。这种作用域在处理特定类型的异步操作时很有用
+   * 瞬态作用域：每次注入时创建新实例：与单例（Singleton）或请求（Request）作用域不同，
+   * 瞬态作用域的提供者每次被注入到消费者时都会创建一个新的实例。
+   * 这意味着每个消费者都会得到一个全新的提供者实例，而不是共享一个实例。
    */
   TRANSIENT,
   /**
