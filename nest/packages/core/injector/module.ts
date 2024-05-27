@@ -41,37 +41,66 @@ import { ContextId, InstanceWrapper } from './instance-wrapper';
 import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref';
 import { Injector } from './injector';
 
+/**
+ * Module用于表示和管理应用中的一个模块，每个模块可以包含控制器、提供者、导入和导出等，是组织和
+ * 封装功能的基本单元。
+ * 
+ 1、封装功能：Module类通过封装控制器、服务（提供者）、导入的模块等，提供了一个清晰的结构来组织相关的功能和业务逻辑。
+ 2、依赖注入容器：每个Module实例作为一个依赖注入（DI）容器，管理和实例化其内部定义的提供者，以及处理这些提供者之间
+ 的依赖关系
+ 3、模块隔离：通过模块化的方法，Module类帮助实现了功能的隔离和重用，使得应用更加模块化，易于扩展和维护
+ */
 export class Module {
+  /**每个模块实例的唯一标识符，这个ID通常用于调试和追中模块，帮助开发者在复杂的应用中快速定位问题 */
   private readonly _id: string;
+  /**出该模块导入的其他模块的集合。通过导入，一个模块可以使用另一个模块公开的提供者或
+   * 控制器，这是实现模块间依赖和功能服用的基础
+   */
   private readonly _imports = new Set<Module>();
+  /**一个Map，其中键是提供者注入标记（InjectionToken），值是包装了提供者实例的InstanceWrapper。这些
+   * 提供者包括服务、工厂、值等，是模块功能实现的基础
+   */
   private readonly _providers = new Map<
     InjectionToken,
     InstanceWrapper<Injectable>
   >();
+  /**存储那些不直接作为提供者，但需要依赖注入的类的映射，这些通常是那些被 
+   *  @Injectable() 装饰但未在任何 providers 或 exports 数组中列出的类。
+  */
   private readonly _injectables = new Map<
     InjectionToken,
     InstanceWrapper<Injectable>
   >();
+  /**存储模块中定义的所有中间件的映射。中间件用于处理请求的前置和后置逻辑，如身份验证、日志记录 */
   private readonly _middlewares = new Map<
     InjectionToken,
     InstanceWrapper<Injectable>
   >();
+  /**存储模块中定义的所有控制器的映射。控制器负责处理应用中的请求，并返回相应。每个控制器都被封装在InstanceWrapper中，
+   * 以便管理器生命周期和依赖注入
+   */
   private readonly _controllers = new Map<
     InjectionToken,
     InstanceWrapper<Controller>
   >();
+  /**特别标记的一组提供者，这写提供者在模块初始化时需要特别处理，例如，他们可能是动态模块的入口点。 */
   private readonly _entryProviderKeys = new Set<InjectionToken>();
+  /**定义了可以被其他模块导入的提供者或控制器的集合。只有被列在exports中的提供者或控制器才可以在其他模块中被
+   * 使用，这提供了一种封装和控制模块间交互的方式。
+   */
   private readonly _exports = new Set<InjectionToken>();
-
+  /**表示莫夸在依赖图中的距离，用于解析依赖注入时的优先级和顺序 */
   private _distance = 0;
+  /** */
   private _initOnPreview = false;
+  /**标记模块是否为全局模块。全局模块一旦被设置，其提供的提供者可以在任何其他模块中被访问，无需显式导入。 */
   private _isGlobal = false;
   private _token: string;
 
   constructor(
     private readonly _metatype: Type<any>,
     private readonly container: NestContainer,
-  ) {
+  ) {  
     this.addCoreProviders();
     this._id = this.generateUuid();
   }
@@ -137,7 +166,7 @@ export class Module {
   get exports(): Set<InjectionToken> {
     return this._exports;
   }
-
+  /** */
   get instance(): NestModule {
     if (!this._providers.has(this._metatype)) {
       throw new RuntimeException();
@@ -145,25 +174,25 @@ export class Module {
     const module = this._providers.get(this._metatype);
     return module.instance as NestModule;
   }
-
+  /** */
   get metatype(): Type<any> {
     return this._metatype;
   }
-
+  /** */
   get distance(): number {
     return this._distance;
   }
-
+  /** */
   set distance(value: number) {
     this._distance = value;
   }
-
+  /** */
   public addCoreProviders() {
     this.addModuleAsProvider();
     this.addModuleRef();
     this.addApplicationConfig();
   }
-
+  /** */
   public addModuleRef() {
     const moduleRef = this.createModuleReferenceType();
     this._providers.set(
@@ -247,6 +276,7 @@ export class Module {
     enhancerSubtype: EnhancerSubtype,
   ): InjectionToken;
   public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
+    /**如果是自定义提供者 */
     if (this.isCustomProvider(provider)) {
       if (this.isEntryProvider(provider.provide)) {
         this._entryProviderKeys.add(provider.provide);
@@ -267,14 +297,22 @@ export class Module {
         host: this,
       }),
     );
-
+    /**判断是不是一个入口提供者，是的话添加到 _entryProviderKeys集合中*/
     if (this.isEntryProvider(provider)) {
       this._entryProviderKeys.add(provider);
     }
 
     return provider as Type<Injectable>;
   }
-
+  /**
+   * 自定义提供者是指那些不直接使用类本身作为提供者，
+   * 而是通过一些特定的配置来定义如何提供依赖的对象。
+   * 这些配置包括使用工厂函数、已存在的实例、值或者通过别的类来提供实例。
+   * 
+   * ClassProvider、ValueProvider、FactoryProvider、ExistingProvider
+   * 
+   * 如果存在provide，说明是自定义提供者
+   */
   public isCustomProvider(
     provider: Provider,
   ): provider is
@@ -645,7 +683,10 @@ export class Module {
       }
     };
   }
-
+/**
+ * 用于判断一个提供者是否被标记为入口提供者，入口提供者通常是指那些在模块初始化时需要特别处理的提供者，他们可能是模块
+ * 的关键部分，如配置加载器、数据库链接初始化等。
+ */
   private isEntryProvider(metatype: InjectionToken): boolean {
     return typeof metatype === 'function'
       ? !!Reflect.getMetadata(ENTRY_PROVIDER_WATERMARK, metatype)

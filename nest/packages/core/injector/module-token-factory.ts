@@ -25,7 +25,7 @@ export class ModuleTokenFactory {
     dynamicModuleMetadata?: Partial<DynamicModule> | undefined,
   ): string {
     const moduleId = this.getModuleId(metatype);
-
+    /**如果没传入模块元数据，那么就 */
     if (!dynamicModuleMetadata) {
       return this.getStaticModuleToken(moduleId, this.getModuleName(metatype));
     }
@@ -34,8 +34,9 @@ export class ModuleTokenFactory {
       module: this.getModuleName(metatype),
       dynamic: dynamicModuleMetadata,
     };
+    /**将opaqueToken对象序列化成字符串 */
     const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken);
-
+    /**使用序列化后的字符串生成新的hash字符串 */
     return this.hashString(opaqueTokenString);
   }
   /**
@@ -43,10 +44,11 @@ export class ModuleTokenFactory {
    */
   public getStaticModuleToken(moduleId: string, moduleName: string): string {
     const key = `${moduleId}_${moduleName}`;
+    /**key对应的hash字符串以及存在 */
     if (this.moduleTokenCache.has(key)) {
       return this.moduleTokenCache.get(key);
     }
-
+    /**不存在则生成一个新的，并且缓存起来 */
     const hash = this.hashString(key);
     this.moduleTokenCache.set(key, hash);
     return hash;
@@ -61,18 +63,20 @@ export class ModuleTokenFactory {
     // instead of the unified "Function" key
     return opaqueToken ? stringify(opaqueToken, this.replacer) : '';
   }
-  /**为给定的模块类型生成一个唯一的ID，如果这个类型已经有一个ID，则返回它 */
+  /**为给定的模块类型生成(uuid生成)一个唯一的ID，如果这个类型已经有一个ID，则返回它 */
   public getModuleId(metatype: Type<unknown>): string {
+    /**如果之前模块类对象已经存在，则通过它湖区moduleId */
     let moduleId = this.moduleIdsCache.get(metatype);
     if (moduleId) {
       return moduleId;
     }
-    // 生成随机字符串
+    // 该模块类没有被缓存过，则生成新的随机字符串uid作为moduleId
     moduleId = randomStringGenerator();
+    /**缓存模块类对应的新生成的moduleId */
     this.moduleIdsCache.set(metatype, moduleId);
     return moduleId;
   }
-  /**返回给定模块类型的名称 */
+  /**返回给定模块类型的名称（类名） */
   public getModuleName(metatype: Type<any>): string {
     return metatype.name;
   }
@@ -88,9 +92,11 @@ export class ModuleTokenFactory {
     if (isFunction(value)) {
       const funcAsString = value.toString();
       const isClass = funcAsString.slice(0, CLASS_STR_LEN) === CLASS_STR;
+      /**如果该函数是类定义，则返回类名 */
       if (isClass) {
         return value.name;
       }
+      /**否则直接返回 */
       return funcAsString;
     }
     if (isSymbol(value)) {
