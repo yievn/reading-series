@@ -226,15 +226,16 @@ export class NestContainer {
   public getModules(): ModulesContainer {
     return this.modules;
   }
-
+  /**返回模块元数据提取器
+   */
   public getModuleCompiler(): ModuleCompiler {
     return this.moduleCompiler;
   }
-
+  /**根据键值拿到模块实例（Modules的实例） */
   public getModuleByKey(moduleKey: string): Module {
     return this.modules.get(moduleKey);
   }
-
+  /**获取内部核心模块 */
   public getInternalCoreModuleRef(): Module | undefined {
     return this.internalCoreModule;
   }

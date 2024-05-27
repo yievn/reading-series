@@ -878,6 +878,7 @@ export function mergeProps(...args: (Data & VNodeProps)[]) {
         }
       } else if (key === 'style') {
         ret.style = normalizeStyle([ret.style, toMerge.style])
+        /**如果是事件监听 */
       } else if (isOn(key)) {
         const existing = ret[key]
         const incoming = toMerge[key]

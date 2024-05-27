@@ -59,6 +59,23 @@ export class Module {
   private readonly _imports = new Set<Module>();
   /**一个Map，其中键是提供者注入标记（InjectionToken），值是包装了提供者实例的InstanceWrapper。这些
    * 提供者包括服务、工厂、值等，是模块功能实现的基础
+   * 
+   * 统一的处理方式：模块类（@module()）也可以作为一个提供者放到_providers中，
+   * 模块自身可以像其他服务或提供者一样被管理和处理，
+   * 这种统一的处理方式简化了模块和服务的管理，因为框架可以使用相同的机制
+   * 来处理所有类型的依赖项，无论他们是普通服务、控制器还是模块本身。
+   * 
+   * 便于依赖注入：通过将模块类（@module()）放到）也可以作为一个提供者放到_providers中，
+   * 模块的实例可以被依赖注入系统管理，这意味着模块本身也可以作为依赖被注入到其他
+   * 提供者或模块中。比如，一个模块需要引用另一个模块的实例进行某些操作
+   * 
+   * 模块的生命周期：在nest中，每个提供者（包括模块本身）都被封装在一个InstanceWrapper中，
+   * 这个封装不仅包含了实例本身，还包含了关于实例的元数据，如是否已解析、依赖关系等。
+   * 将模块类放入_providers允许模块利用现有的机制来管理模块的声明周期，包括其初始化和销毁。
+   * 
+   * 反射和元数据访问：在nest中，模块和服务的元数据是通过Typescript的反射API
+   * 来访问的，将模块类_metatype作为提供者存储，使得可以在运行时通过_metatype访问
+   * 和修改模块的元数据。
    */
   private readonly _providers = new Map<
     InjectionToken,
@@ -89,26 +106,47 @@ export class Module {
    * 使用，这提供了一种封装和控制模块间交互的方式。
    */
   private readonly _exports = new Set<InjectionToken>();
-  /**表示莫夸在依赖图中的距离，用于解析依赖注入时的优先级和顺序 */
+  /**表示模块在依赖图中的距离，用于解析依赖注入时的优先级和顺序 */
   private _distance = 0;
   /** */
   private _initOnPreview = false;
   /**标记模块是否为全局模块。全局模块一旦被设置，其提供的提供者可以在任何其他模块中被访问，无需显式导入。 */
   private _isGlobal = false;
+  /**是模块在依赖注入容器中的标识符。它用于在模块间建立链接和依赖关系，确保
+   * 正确的模块实例呗注入到需要他们的地方
+   */
   private _token: string;
 
   constructor(
+    /**
+     * 用于定义和引用模块的类本身，这个属性通常用于反射和元数据操作，以及在
+     * 依赖注入系统中标识和处理模块。
+     * 
+     * 在Typescript中，Type是一个泛型接口，用于表示类的类型。_metatype通常是
+     * 一个类的构造函数，这意味着它是一个可以被new关键实例化的对象。在nest中，这通常
+     * 指向一个用@module()装饰器的类
+     * 
+     * 1、依赖注入。_metatype用于依赖注入容器中注册的和解析模块，它作为一个一个标识符，帮助
+     * 容器识别和实例化模块，以及处理模块间的依赖关系
+     * 
+     * 2、nest使用Typescript的反射（Reflect）功能来读取和操作类的元数据。
+     * _metatype作为类的直接引用，允许框架查询模块的元数据，如模块的导入、提供者、
+     * 控制器等。
+     * 
+     * 3、模块实例化：在模块的声明周期中，_metatype用于创建模块的实例，这是通过
+     * 调用_metatype作为构造函数来完成，通常在模块的初始化阶段进行。
+     */
     private readonly _metatype: Type<any>,
     private readonly container: NestContainer,
   ) {  
     this.addCoreProviders();
     this._id = this.generateUuid();
   }
-
+  /**获取唯一标识符 */
   get id(): string {
     return this._id;
   }
-
+  /**获取 */
   get token(): string {
     return this._token;
   }
@@ -124,7 +162,6 @@ export class Module {
   get isGlobal() {
     return this._isGlobal;
   }
-
   set isGlobal(global: boolean) {
     this._isGlobal = global;
   }
@@ -156,7 +193,7 @@ export class Module {
   get controllers(): Map<InjectionToken, InstanceWrapper<Controller>> {
     return this._controllers;
   }
-
+  /**获取入口提供者 */
   get entryProviders(): Array<InstanceWrapper<Injectable>> {
     return Array.from(this._entryProviderKeys).map(token =>
       this.providers.get(token),
@@ -168,13 +205,18 @@ export class Module {
   }
   /** */
   get instance(): NestModule {
+    /**
+     * 检查模块类 _metatype在_providers中是否存在（模块类也会被放到_providers中）
+     * 不错在则抛出错误
+    */
     if (!this._providers.has(this._metatype)) {
       throw new RuntimeException();
     }
+    /**存在于_providers，获取到后返回 */
     const module = this._providers.get(this._metatype);
     return module.instance as NestModule;
   }
-  /** */
+  /**返回模块类（就是使用@Module装饰的类定义） */
   get metatype(): Type<any> {
     return this._metatype;
   }
@@ -186,15 +228,44 @@ export class Module {
   set distance(value: number) {
     this._distance = value;
   }
-  /** */
+  /**
+   * addCoreProviders的主要目的是确保每个模块都具备处理其内部逻辑和与其他模块
+   * 交互所需的基本服务，这包括但不限于模块自身的引用、模块引用的处理器、以及应用配置。
+   */
   public addCoreProviders() {
+    /**
+     * 通过addModuleAsProvider方法，将模块的_matatype添加到_providers映射中
+     * 这使得模块可以子啊依赖注入系统中被自引用，支持模块内部的依赖关系和自我管理
+     */
     this.addModuleAsProvider();
+    /**
+     * 通过addModuleRef方法，创建并注册一个ModuleRef实例。ModuleRef是一个特殊的服务，
+     * 提供了对模块实例的引用和操作能力，如获取和解析模块内的提供者和控制器。
+    */
     this.addModuleRef();
+    /**
+     * 通过addApplicationConfig方法，将应用配置注册为一个提供者。应用配置
+     * 包含了全局配置信息，如全局中间件、过滤器等，这对于模块执行其功能是必要的。
+     */
     this.addApplicationConfig();
   }
-  /** */
+  /**
+   * addModuleRef 方法的主要目的是创建并注册一个 ModuleRef 实例到模块的 _providers 映射中。ModuleRef 作为一个核心服务，它允许：
+   * 1、获取和解析模块内的提供者和控制器。
+   * 2、动态地添加或替换提供者。
+   * 3、访问模块的上下文和状态。
+  */
   public addModuleRef() {
+    /**
+     * 创建一个 ModuleRef 类的实例。
+     */
     const moduleRef = this.createModuleReferenceType();
+    /**
+     * 创建的 ModuleRef 实例随后被封装在一个 InstanceWrapper 中，
+     * 并设置为已解析（isResolved: true）。
+     * 这个 InstanceWrapper 随后被添加到模块的 _providers 映射中，
+     * 使用 ModuleRef 作为键。
+     */
     this._providers.set(
       ModuleRef,
       new InstanceWrapper({
@@ -207,21 +278,38 @@ export class Module {
       }),
     );
   }
-
+  /**
+   * 将模块类（_metatype）注册为一个提供者，这样模块就可以在
+   * 其自身或其他模块中作为依赖被注入，这对于实现模块间的通信、共享服务或实现模块
+   * 级的单例模式等功能非常有用。
+   */
   public addModuleAsProvider() {
+    /**
+     * 将模块的_metatype作为键，创建一个新的InstanceWrapper实例作为值，添加
+     * 到_providers映射中。
+     * 
+     * InstanceWrapper是一个封装类，用于存储关于提供者的各种信息，包括其类型、实例
+     * 、解析状态等。
+     * 
+     * 在 InstanceWrapper 中，token 设置为模块的 _metatype，name 设置为模块类的名称，metatype 也设置为模块的 _metatype。
+     * 初始时，instance 设置为 null，isResolved 设置为 false，表示该模块尚未实例化或解析。
+     * 
+     */
     this._providers.set(
       this._metatype,
       new InstanceWrapper({
         token: this._metatype,
         name: this._metatype.name,
         metatype: this._metatype,
-        isResolved: false,
+        isResolved: false, 
         instance: null,
         host: this,
       }),
     );
   }
-
+  /**
+   * 
+   */
   public addApplicationConfig() {
     this._providers.set(
       ApplicationConfig,
@@ -629,7 +717,9 @@ export class Module {
   > {
     return [...this._providers].filter(([_, wrapper]) => !wrapper.isAlias);
   }
-
+  /**
+   * 
+   */
   public createModuleReferenceType(): Type<ModuleRef> {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
