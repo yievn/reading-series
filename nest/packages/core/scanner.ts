@@ -102,14 +102,20 @@ export class DependenciesScanner {
     /**绑定全局作用域 */
     this.container.bindGlobalScope();
   }
-
+  /**递归扫描以及注册应用中的所有模块 */
   public async scanForModules({
+    /**当前要扫描的模块 */
     moduleDefinition,
+    /**指示是否延迟加载模块 */
     lazy,
+    /**当前模块的作用域链 */
     scope = [],
+    /**一个包含已经处理过的模块的上下文注册表，防止重复处理同一个模块 */
     ctxRegistry = [],
+    /**可选的模块覆盖定义，用于在测试或特定环境下替换模块的实现 */
     overrides = [],
   }: ModulesScanParameters): Promise<Module[]> {
+
     const { moduleRef: moduleInstance, inserted: moduleInserted } =
       (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
       {};
@@ -536,10 +542,12 @@ export class DependenciesScanner {
   public insertController(controller: Type<Controller>, token: string) {
     this.container.addController(controller, token);
   }
-
+  /**将一个模块定义插入到应用的模块容器中，或者如果存在覆盖定义，则替换现有的模块 */
   private insertOrOverrideModule(
     moduleDefinition: ModuleDefinition,
+    /**一个包含模块覆盖信息的数组 */
     overrides: ModuleOverride[],
+    /**当前模块的作用域链，用于处理模块间的依赖和继承 */
     scope: Type<unknown>[],
   ): Promise<
     | {
@@ -548,10 +556,12 @@ export class DependenciesScanner {
       }
     | undefined
   > {
+    /**查找是否存在对当前模块的覆盖定义 */
     const overrideModule = this.getOverrideModuleByModule(
       moduleDefinition,
       overrides,
     );
+    /**如果存在覆盖定义，则使用覆盖定义中指定的新模块来替换原有的模块 */
     if (overrideModule !== undefined) {
       return this.overrideModule(
         moduleDefinition,
@@ -559,14 +569,20 @@ export class DependenciesScanner {
         scope,
       );
     }
-
+    /**如果没有找到覆盖或者不需要覆盖，将模块定义插入到容器中。
+     * 返回一个包含模块引用和插入状态的对象，这有助于后续的处理逻辑判断模块是否
+     * 是新插入的
+     */
     return this.insertModule(moduleDefinition, scope);
   }
-
+  /**查找给定模块的覆盖定义 */
   private getOverrideModuleByModule(
+    /**要查找覆盖的模块定义 */
     module: ModuleDefinition,
+    /**一个包含覆盖信息的数组 */
     overrides: ModuleOverride[],
   ): ModuleOverride | undefined {
+    /**如果模块是一个前向引用 */
     if (this.isForwardReference(module)) {
       return overrides.find(moduleToOverride => {
         return (

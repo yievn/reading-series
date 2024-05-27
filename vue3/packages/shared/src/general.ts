@@ -11,7 +11,7 @@ export const NOOP = () => {}
  * Always return false.
  */
 export const NO = () => false
-
+/**如果是on+大写字母，则认为它是一个事件监听 */
 export const isOn = (key: string) =>
   key.charCodeAt(0) === 111 /* o */ &&
   key.charCodeAt(1) === 110 /* n */ &&
