@@ -108,7 +108,7 @@ export class DependenciesScanner {
     moduleDefinition,
     /**指示是否延迟加载模块 */
     lazy,
-    /**当前模块的作用域链 */
+    /**当前模块的作用域链，或者说依赖顺序链 */
     scope = [],
     /**一个包含已经处理过的模块的上下文注册表，防止重复处理同一个模块 */
     ctxRegistry = [],
@@ -556,12 +556,12 @@ export class DependenciesScanner {
       }
     | undefined
   > {
-    /**在模块定义中存在与模块覆盖列表匹配的模块 */
+    /**在模块覆盖列表overrides中匹配moduleDefinition，存在则返回覆盖模块 */
     const overrideModule = this.getOverrideModuleByModule(
       moduleDefinition,
       overrides,
     );
-    /**如果存在覆盖定义，则使用覆盖定义中指定的新模块来替换原有的模块 */
+    /**如果moduleDefinition存在覆盖定义列表中，则使用覆盖定义中指定的新模块来替换原有的模块 */
     if (overrideModule !== undefined) {
       return this.overrideModule(
         moduleDefinition,
@@ -611,7 +611,13 @@ export class DependenciesScanner {
       moduleToOverride => moduleToOverride.moduleToReplace === module,
     );
   }
-
+  /**
+   * 
+   * @param moduleToOverride 即将要被替换的模块
+   * @param newModule 作为替换的新模块
+   * @param scope 
+   * @returns 
+   */
   private async overrideModule(
     moduleToOverride: ModuleDefinition,
     newModule: ModuleDefinition,

@@ -3,16 +3,25 @@ import { LoggerService, LogLevel } from '../services/logger.service';
 import { DynamicModule } from './modules';
 import { Type } from './type.interface';
 
+/**用于定义在获取或解析依赖项时可以使用的配置选项，这个接口
+ * 主要用于get和resolve方法，允许开发者在请求特定服务或组件时
+ * 提供额外的指示，以控制如何获取或解析这些依赖依赖项。
+ */
 export interface GetOrResolveOptions {
   /**
    * If enabled, lookup will only be performed in the host module.
    * @default false
+   * 当设置为true时，这个选项指示依赖注入系统仅在当前模块（即发起请求的模块）
+   * 中查找依赖项。这有助于确保依赖项的查找范围被限制在一个特定的模块内，从而
+   * 避免潜在的命名冲突或错误的依赖解析。
    */
   strict?: boolean;
   /**
    * If enabled, instead of returning a first instance registered under a given token,
    * a list of instances will be returned.
    * @default false
+   * 当设置为true时，这个选项指示依赖注入系统返回所有匹配实例，而不仅仅是第一个找到的实例。
+   * 这适用于需要对所有实例执行操作的场景，如初始化或批量处理
    */
   each?: boolean;
 }

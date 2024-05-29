@@ -89,7 +89,21 @@ export class NestContainer {
   public getHttpAdapterHostRef() {
     return this.internalProvidersStorage.httpAdapterHost;
   }
- 
+  /**
+   * 
+   * @param metatype 这是要添加的模块的类型，它可以是一个类（Type<any>），一个动态模块（DynamicModule），
+   * 或者一个返回DynamicModule的Promise
+   * @param scope 这是一个数组，表示当前模块的作用域或依赖路径。它通常用于处理模块间依赖关系和确保正确的模块加载顺序
+   * @returns 
+   * 
+   * 本质上，addModule添加模块的过程可能存在一个递归调用的过程，模块可能
+   * 导入其他模块，这在处理动态元数据时因为存在imports，会调用addModule进一步处理imports
+   * 中的模块。
+   * 
+   * 相当于当前模块为根节点，通过imports的方式向子孙节点扩散，不断addModule，直到
+   * 每个分支的叶子节点才结束（也就是无imports），这是所有存在直接或间接依赖的模块到会
+   * 被添加到模块容器moduleContainer中。
+   */
   public async addModule(
     metatype: ModuleMetatype,
     scope: ModuleScope,
@@ -102,10 +116,14 @@ export class NestContainer {
   > {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
     // We still need to catch the edge-case of `forwardRef(() => undefined)`
+    /**检查metatype，如果不存在，抛出异常，表示前向引用未定义 */
     if (!metatype) {
       throw new UndefinedForwardRefException(scope);
     }
-    /**提取模块对象上的类定义、元数据和token */
+    /**
+     * 使用moduleCompiler.compile解析metatype，解析得到模块的元数据和相关动态模块数据，生成一个包含
+     * 模块类型、动态元数据和模块标识符的对象
+    */
     const { type, dynamicMetadata, token } =
       await this.moduleCompiler.compile(metatype);
     /**在模块容器中存在token对应的模块时，那就直接返回已经缓存过的模块引用 */
@@ -117,7 +135,12 @@ export class NestContainer {
         inserted: true,
       };
     }
-
+    /**
+     * 如果模块未被缓存，调用 setModule方法创建一个新的Module实例，
+     * 并将其添加到ModulesContainer中。然后更新模块作用域，添加动态模块元数据，并处理全局模块的注册
+     * 
+     * 返回一个包含新模块引用和inserted标志的对象。如果模块是新插入的，inserted为true。
+    */
     return {
       moduleRef: await this.setModule(
         {
@@ -130,7 +153,15 @@ export class NestContainer {
       inserted: true,
     };
   }
-
+  /**
+   * 
+   * @param metatypeToReplace 要被替换的模块的类型。这可以是一个类（Type<any>），一个动态模块（DynamicModule），
+   * 或者一个返回 DynamicModule 的 Promise。
+   * @param newMetatype 新模块的类型，用于替换旧模块。
+   * @param scope 模块的作用域，这是一个数组，表示当前模块的依赖路径。
+   * 它通常用于处理模块间的依赖关系和确保正确的模块加载顺序。
+   * @returns 
+   */
   public async replaceModule(
     metatypeToReplace: ModuleMetatype,
     newMetatype: ModuleMetatype,
@@ -147,11 +178,15 @@ export class NestContainer {
     if (!metatypeToReplace || !newMetatype) {
       throw new UndefinedForwardRefException(scope);
     }
-
+    /**
+     * 使用moduleCompiler.compile解析metatypeToReplace和newMetatype，
+     * 解析得到模块的元数据和相关动态模块数据，生成一个包含
+     * 模块类型、动态元数据和模块标识符的对象
+    */
     const { token } = await this.moduleCompiler.compile(metatypeToReplace);
     const { type, dynamicMetadata } =
       await this.moduleCompiler.compile(newMetatype);
-
+    /**使用新的模块创建module实例，替换掉在模块容器中token对应的值 */
     return {
       moduleRef: await this.setModule(
         {
@@ -161,51 +196,73 @@ export class NestContainer {
         },
         scope,
       ),
+      /**inserted始终为false，表示这是一个替换模块而不是新插入的模块 */
       inserted: false,
     };
   }
-
+  /**
+   * 创建Module实例，将实例添加到moduleContainer中，并且处理动态
+   * 元数据中的imports
+   */
   private async setModule(
     { token, dynamicMetadata, type }: ModuleFactory,
     scope: ModuleScope,
   ): Promise<Module | undefined> {
-    /**将模块类进行实例化 */
+    /**创建Module实例，Module用于对我们的模块定义进一步的管理*/
     const moduleRef = new Module(type, this);
     moduleRef.token = token;
+    /**标记该类在预览模式下是否会被初始化 */
     moduleRef.initOnPreview = this.shouldInitOnPreview(type);
-    /**将模块类实例存储起来 */
+    /**将新的Module实例缓存到moduleContainer中 */
     this.modules.set(token, moduleRef);
-
+    /**更新模块作用域 
+     * [].concat([1,2,3], [4,5,6], 7) => [1,2,3,4,5,6,7]
+    */
     const updatedScope = [].concat(scope, type);
+    /**将动态元数据添加到dynamicModulesMetadata中 */
     await this.addDynamicMetadata(token, dynamicMetadata, updatedScope);
-    /**当前模块是一个全局模块 */
+    /**如果当前模块还是一个全局模块 */
     if (this.isGlobalModule(type, dynamicMetadata)) {
       /**标记模块实例的isGlobal为true */
       moduleRef.isGlobal = true;
+      /**将Module实例添加到全局模块容器dynamicModulesMetadata中 */
       this.addGlobalModule(moduleRef);
     }
-
+    /**返回新建的Module实例 */
     return moduleRef;
   }
-
+  /**
+   * 将当前模块的动态元数据添加到dynamicModulesMetadata中，如果里面还有导入的模块
+   * imports，那么进一步执行addDynamicModules，将imports中的模块也一起添加到模块
+   * 容器中
+   * @param token 模块标识符
+   * @param dynamicModuleMetadata 动态模块元数据
+   * @param scope 当前模块的作用域或依赖路径
+   * @returns 
+   */
   public async addDynamicMetadata(
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
     scope: Type<any>[],
   ) {
+    /**如果没有动态模块元数据，那么不继续执行 */
     if (!dynamicModuleMetadata) {
       return;
     }
+    /**将动态模块元数据添加到dynamicModulesMetadata中 */
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
     const { imports } = dynamicModuleMetadata;
+    /**将导入的模块imports也通过 addDynamicModules最后添加到模块容器中*/
     await this.addDynamicModules(imports, scope);
   }
 
   public async addDynamicModules(modules: any[], scope: Type<any>[]) {
+    /**没有导入模块，直接返回 */
     if (!modules) {
       return;
     }
+    /**遍历imports中的模块，调用addModule将模块添加到模块容器 */
     await Promise.all(modules.map(module => this.addModule(module, scope)));
   }
   /**检查一个模块是否为一个全局模块 */
@@ -309,7 +366,7 @@ export class NestContainer {
       controllerRef,
     );
   }
-
+  /**清空模块容器 */
   public clear() {
     this.modules.clear();
   }
@@ -363,7 +420,7 @@ export class NestContainer {
       isResolved: true,
     });
   }
-
+  /**type是否在allowList中，在的话，表示该类在预览模式下会被初始化，否则不会 */
   private shouldInitOnPreview(type: Type) {
     return InitializeOnPreviewAllowlist.has(type);
   }

@@ -308,9 +308,16 @@ export class Module {
     );
   }
   /**
+   * 将全局应用配置注册为模块的一个提供者，这一步确保模块能够访问到全局配置信息，
+   * 如中间件、过滤器、管道等。
    * 
    */
   public addApplicationConfig() {
+    /**首先从容器实例获取到中ApplicationConfig的实例，这个实例
+     * 在应用启动时创建，并且包含了全局的配置信息。
+     * 
+     * 
+     */
     this._providers.set(
       ApplicationConfig,
       new InstanceWrapper({
@@ -322,34 +329,60 @@ export class Module {
       }),
     );
   }
-
+/**
+ * 用于向模块的依赖注入系统中添加一个可注入的服务或提供者，它允许模块动态地
+ * 注册新的服务或增强现有服务的功能。
+ * 
+ * addInjectable的主要目的是将一个新的或现有的服务（injectable）注册到
+ * 模块的_injectables映射中，这使得服务可以在模块内部或通过依赖注入在其他模块
+ * 中访问和使用。
+ */
   public addInjectable<T extends Injectable>(
     injectable: Provider,
     enhancerSubtype: EnhancerSubtype,
     host?: Type<T>,
   ) {
+    /** 判断injectable是否是自定义提供者（拥有provide属性）*/
     if (this.isCustomProvider(injectable)) {
+      /**如果是自定义提供者，addCustomProvider来处理自定义提供者，并将
+       * 其添加到_injectables映射中
+       */
       return this.addCustomProvider(
         injectable,
         this._injectables,
         enhancerSubtype,
       );
     }
+    /**
+     * 如果injectable不是自定义提供者，那么先检查_injectables中是否已存在
+     * 该提供者的instanceWrapper实例
+     */
     let instanceWrapper = this.injectables.get(injectable);
     if (!instanceWrapper) {
+      /**如果不存在，那么创建一个新的InstanceWrapper实例， 
+       * InstanceWrapper实例包含了提供者的类型、实例、j
+      */
       instanceWrapper = new InstanceWrapper({
         token: injectable,
         name: injectable.name,
         metatype: injectable,
         instance: null,
-        isResolved: false,
+        isResolved: false, // 未被解析
         scope: getClassScope(injectable),
+        /**该提供者实例是否为持久的 */
         durable: isDurable(injectable),
         subtype: enhancerSubtype,
-        host: this,
+        host: this, // 该提供者的宿主为当前模块
       });
       this._injectables.set(injectable, instanceWrapper);
     }
+    /**如果提供了host参数（通常是一个模块或控制器），将尝试在_controllers或者_providers
+     * 中找到对应的InstanceWrapper实例，如果找到host对应的InstanceWrapper实例，
+     * 那么会将当前injectable的instanceWrapper实例添加到宿主instanceWrapper
+     * 实例上的enhandlers上。
+     * 
+     * 
+     */
     if (host) {
       const hostWrapper =
         this._controllers.get(host) || this._providers.get(host);
@@ -425,60 +458,69 @@ export class Module {
       | FactoryProvider
       | ValueProvider
       | ExistingProvider,
-    collection: Map<Function | string | symbol, any>,
+    collection: Map<Function | string | symbol, any>, // _providers
     enhancerSubtype?: EnhancerSubtype,
   ) {
     if (this.isCustomClass(provider)) {
+      /**如果是类提供者（拥有useClass） */
       this.addCustomClass(provider, collection, enhancerSubtype);
     } else if (this.isCustomValue(provider)) {
+      /**如果是值提供者（拥有useValue） */
       this.addCustomValue(provider, collection, enhancerSubtype);
     } else if (this.isCustomFactory(provider)) {
+      /**如果是工厂函数提供者（拥有useFactory） */
       this.addCustomFactory(provider, collection, enhancerSubtype);
     } else if (this.isCustomUseExisting(provider)) {
+      /**如果是现有提供者*（ 拥有useExisting）*/
       this.addCustomUseExisting(provider, collection, enhancerSubtype);
     }
     return provider.provide;
   }
 
+  /**判断是否为类提供者，拥有useClass */
   public isCustomClass(provider: any): provider is ClassProvider {
     return !isUndefined((provider as ClassProvider).useClass);
   }
-
+  /**判断是否为值提供者，拥有过useValue */
   public isCustomValue(provider: any): provider is ValueProvider {
     return (
       isObject(provider) &&
       Object.prototype.hasOwnProperty.call(provider, 'useValue')
     );
   }
-
+  /**判断是否为工厂函数提供者，拥有useFactory */
   public isCustomFactory(provider: any): provider is FactoryProvider {
     return !isUndefined((provider as FactoryProvider).useFactory);
   }
-
+  /**判断是否为现有提供者，拥有useExisting */
   public isCustomUseExisting(provider: any): provider is ExistingProvider {
     return !isUndefined((provider as ExistingProvider).useExisting);
   }
-
+  /**判断是否为动态模块，拥有module */
   public isDynamicModule(exported: any): exported is DynamicModule {
     return exported && exported.module;
   }
-
+  /**将自定义类提供者添加到_providers中 */
   public addCustomClass(
     provider: ClassProvider,
-    collection: Map<InjectionToken, InstanceWrapper>,
+    collection: Map<InjectionToken, InstanceWrapper>, // _providers
     enhancerSubtype?: EnhancerSubtype,
   ) {
+    /**从自定义类提供者中获取到作用域以及是否持久的配置 */
     let { scope, durable } = provider;
 
     const { useClass } = provider;
     if (isUndefined(scope)) {
+      /**获取类的元数据，从中拿到scope */
       scope = getClassScope(useClass);
     }
     if (isUndefined(durable)) {
+      /**从类的元数据中的scopeOption中，判断scopeOption.durable */
       durable = isDurable(useClass);
     }
-
+    /**获取提供者的唯一标识符 */
     const token = provider.provide;
+    /**将自定义提供者添加到_providers中 */
     collection.set(
       token,
       new InstanceWrapper({
@@ -494,7 +536,7 @@ export class Module {
       }),
     );
   }
-
+  /**将自定义值提供者添加到_providers中 */
   public addCustomValue(
     provider: ValueProvider,
     collection: Map<Function | string | symbol, InstanceWrapper>,
@@ -509,13 +551,14 @@ export class Module {
         metatype: null,
         instance: value,
         isResolved: true,
+        /**是否为异步提供者 */
         async: value instanceof Promise,
         host: this,
         subtype: enhancerSubtype,
       }),
     );
   }
-
+  /**将自定义工厂函数提供者添加到_providers中 */
   public addCustomFactory(
     provider: FactoryProvider,
     collection: Map<Function | string | symbol, InstanceWrapper>,
@@ -545,7 +588,10 @@ export class Module {
       }),
     );
   }
-
+  /**
+   * 用于在模块的依赖注入系统中添加一个新的提供者，这个提供者不创建新的实例，而是引用
+   * 一个已经存在的实例。
+   */
   public addCustomUseExisting(
     provider: ExistingProvider,
     collection: Map<Function | string | symbol, InstanceWrapper>,
@@ -557,6 +603,11 @@ export class Module {
       new InstanceWrapper({
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
+        /**
+         * 将 metatype赋成函数形式，在解析的时候，
+         * inject中的值会被当做参数传进来
+         * 最后解析结果会是useExisting指向的提供者
+        */
         metatype: (instance => instance) as any,
         instance: null,
         isResolved: false,
@@ -681,7 +732,7 @@ export class Module {
   public getProviderByKey<T = any>(name: InjectionToken): InstanceWrapper<T> {
     return this._providers.get(name) as InstanceWrapper<T>;
   }
-
+  /**根据实例ID获取提供者实例 */
   public getProviderById<T = any>(id: string): InstanceWrapper<T> | undefined {
     return Array.from(this._providers.values()).find(
       item => item.id === id,
