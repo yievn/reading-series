@@ -323,7 +323,7 @@ export class InstanceWrapper<T = any> {
     }
     return enhancers ? callback(enhancers, lookupRegistry) : false;
   }
-
+  
   public isDependencyTreeStatic(lookupRegistry: string[] = []): boolean {
     if (!isUndefined(this.isTreeStatic)) {
       return this.isTreeStatic;
