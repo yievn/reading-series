@@ -102,7 +102,13 @@ export class DependenciesScanner {
     /**绑定全局作用域 */
     this.container.bindGlobalScope();
   }
-  /**递归扫描以及注册应用中的所有模块 */
+  /**
+   * 
+   * @param param0 
+   * @returns 
+   * scanForModules用于递归扫描和注册应用中的所有模块，处理
+   * 模块的导入、依赖解析，并确保模块按正确的顺序和方式被加载和初始化。
+   */
   public async scanForModules({
     /**当前要扫描的模块 */
     moduleDefinition,
@@ -115,71 +121,99 @@ export class DependenciesScanner {
     /**可选的模块覆盖定义，用于在测试或特定环境下替换模块的实现 */
     overrides = [],
   }: ModulesScanParameters): Promise<Module[]> {
-    /** */
+    /**
+     * 如果模块存在于覆盖定义中，使用覆盖的新模块替换原有模块。如果没有，就将模块类
+     * 添加到moduleContainer中，并且返回Module实例，以及inserted标志（表示
+     * 模块是新添加还是替换）
+     */
     const { moduleRef: moduleInstance, inserted: moduleInserted } =
       (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
       {};
 
+    /**如果模块存在于覆盖定义中，则从覆盖定义获取替换模块定义，否则用原先的模块定义 */
     moduleDefinition =
       this.getOverrideModuleByModule(moduleDefinition, overrides)?.newModule ??
       moduleDefinition;
-
+    /**如果模块定义是一个Promise实例，则使用await获取结果 */
     moduleDefinition =
       moduleDefinition instanceof Promise
         ? await moduleDefinition
         : moduleDefinition;
-
+    /**将模块定义添加到ctxRegistry， 防止重复注册 */
     ctxRegistry.push(moduleDefinition);
-
+    /**如果模块定义是正向引用的，则通过执行forwardRef获取实际指向的模块定义 */
     if (this.isForwardReference(moduleDefinition)) {
       moduleDefinition = (moduleDefinition as ForwardReference).forwardRef();
     }
+    /**从元数据或者模块定义中获取导入（imports）的模块 */
     const modules = !this.isDynamicModule(
       moduleDefinition as Type<any> | DynamicModule,
     )
+    /**如果不是动态模块，那就从@Module()中获取imports的模块 */
       ? this.reflectMetadata(
           MODULE_METADATA.IMPORTS,
           moduleDefinition as Type<any>,
         )
       : [
+         /**
+          * 如果是动态模块，除了从@Module()中获取imports的模块，
+          * 还从模块定义中获取imports */
           ...this.reflectMetadata(
             MODULE_METADATA.IMPORTS,
             (moduleDefinition as DynamicModule).module,
           ),
           ...((moduleDefinition as DynamicModule).imports || []),
         ];
-
+    /**已注册的Module实例 */
     let registeredModuleRefs = [];
+    /**遍历导入imports的模块定义 */
     for (const [index, innerModule] of modules.entries()) {
       // In case of a circular dependency (ES module system), JavaScript will resolve the type to `undefined`.
+      /**
+       * 在循环依赖(ES模块系统)的情况下，JavaScript会将类型解析为' undefined '
+       */
       if (innerModule === undefined) {
         throw new UndefinedModuleException(moduleDefinition, index, scope);
       }
       if (!innerModule) {
         throw new InvalidModuleException(moduleDefinition, index, scope);
       }
+      /**如果innerModule已经存在ctxRegistry，则跳过忽略 */
       if (ctxRegistry.includes(innerModule)) {
         continue;
       }
+      /**递归扫描innerModule */
       const moduleRefs = await this.scanForModules({
         moduleDefinition: innerModule,
+        /**更新作用域链 */
         scope: [].concat(scope, moduleDefinition),
         ctxRegistry,
         overrides,
         lazy,
       });
+      /**更新registeredModuleRefs */
       registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
     }
+    /**
+     * 防出错判断
+     */
     if (!moduleInstance) {
       return registeredModuleRefs;
     }
-
+    /** */
     if (lazy && moduleInserted) {
       this.container.bindGlobalsToImports(moduleInstance);
     }
     return [moduleInstance].concat(registeredModuleRefs);
   }
-
+  /**
+   * 负责将一个模块定义插入到nest应用的模块容器中，确保模块被正确
+   * 添加到系统中，并出来相关的依赖和作用域
+   * @param moduleDefinition 当前即将要被插入的模块的类
+   * @param scope 这是一个类型数组（Type<unknown>[]），表示当前模块的依赖路径或作用域链。
+   * 它用于处理模块间的依赖关系和确保正确的模块加载顺序。
+   * @returns 
+   */
   public async insertModule(
     moduleDefinition: any,
     scope: Type<unknown>[],
@@ -190,10 +224,17 @@ export class DependenciesScanner {
       }
     | undefined
   > {
+    /**
+     * 如果moduleDefinition是一个正向引用，那么调用moduleDefinition.forwardRef()获取
+     * 引用指向的模块类
+     */
     const moduleToAdd = this.isForwardReference(moduleDefinition)
       ? moduleDefinition.forwardRef()
       : moduleDefinition;
-
+    /**
+     * 如果moduleToAdd是@Injectable、@Contriller()、@Catch()标记的类
+     * 那么无效类模块的异常，因为这些类型不能作为模块被注册
+     */
     if (
       this.isInjectable(moduleToAdd) ||
       this.isController(moduleToAdd) ||
@@ -201,10 +242,13 @@ export class DependenciesScanner {
     ) {
       throw new InvalidClassModuleException(moduleDefinition, scope);
     }
-
+    /**将模块插入模块容器中 */
     return this.container.addModule(moduleToAdd, scope);
   }
-
+  /**
+   * 
+   * @param modules 
+   */
   public async scanModulesForDependencies(
     modules: Map<string, Module> = this.container.getModules(),
   ) {

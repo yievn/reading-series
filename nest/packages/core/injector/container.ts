@@ -96,7 +96,7 @@ export class NestContainer {
    * @param scope 这是一个数组，表示当前模块的作用域或依赖路径。它通常用于处理模块间依赖关系和确保正确的模块加载顺序
    * @returns 
    * 
-   * 本质上，addModule添加模块的过程可能存在一个递归调用的过程，模块可能
+   * 本质上，addModule添加模块的过程可能存在一个递归调用的过程（当模块是动态模块的时候），模块可能
    * 导入其他模块，这在处理动态元数据时因为存在imports，会调用addModule进一步处理imports
    * 中的模块。
    * 
@@ -123,6 +123,10 @@ export class NestContainer {
     /**
      * 使用moduleCompiler.compile解析metatype，解析得到模块的元数据和相关动态模块数据，生成一个包含
      * 模块类型、动态元数据和模块标识符的对象
+     * 
+     * 
+     * 动态模块存在dynamicMetadata，如果是@Module()装饰的类，
+     * 那么dynamicMetadata会是undefined
     */
     const { type, dynamicMetadata, token } =
       await this.moduleCompiler.compile(metatype);
@@ -196,7 +200,15 @@ export class NestContainer {
         },
         scope,
       ),
-      /**inserted始终为false，表示这是一个替换模块而不是新插入的模块 */
+      /**
+       * inserted始终为false，表示这是一个替换模块而不是新插入的模块 
+       * 
+       * inserted 可以用来区分一个模块是被添加还是被替换。这对于调试、
+       * 日志记录或执行后续的操作逻辑（如触发事件或回调）非常有用。
+       * 
+       * inserted 可以作为一个条件标志，帮助决定是否需要执行
+       * 某些只有在新插入模块时才需要的操作，例如初始化或配置。
+       * */
       inserted: false,
     };
   }
