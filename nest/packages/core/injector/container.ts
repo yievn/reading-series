@@ -257,7 +257,8 @@ export class NestContainer {
     dynamicModuleMetadata: Partial<DynamicModule>,
     scope: Type<any>[],
   ) {
-    /**如果没有动态模块元数据，那么不继续执行 */
+    /**如果没有动态模块元数据，那么不继续执行，
+     * 一般出现在只有@Module()装饰的模块类上 */
     if (!dynamicModuleMetadata) {
       return;
     }
@@ -313,22 +314,34 @@ export class NestContainer {
     relatedModule: Type<any> | DynamicModule,
     token: string,
   ) {
+    /**该模块已经存在了 */
     if (!this.modules.has(token)) {
       return;
     }
-    /**获取模块的引用 */
+    /**获取Module实例的引用 */
     const moduleRef = this.modules.get(token);
+    /**通过relatedModule解析出该模块类的token */
     const { token: relatedModuleToken } =
       await this.moduleCompiler.compile(relatedModule);
+    /**通过token从模块容器中获取Module实例 */
     const related = this.modules.get(relatedModuleToken);
+    /**调用Module实例中的addImport方法，将relatedModuleToken对应的Module实例加入到_imports */
     moduleRef.addImport(related);
   }
-
+  /**
+   * 
+   * @param provider 提供者
+   * @param token 
+   * @param enhancerSubtype 
+   * @returns 
+   * 将provider添加到Module实例的_providers集合中
+   */
   public addProvider(
     provider: Provider,
     token: string,
     enhancerSubtype?: EnhancerSubtype,
   ): string | symbol | Function {
+    /**通过token拿到Module实例 */
     const moduleRef = this.modules.get(token);
     if (!provider) {
       throw new CircularDependencyException(moduleRef?.metatype.name);
@@ -336,6 +349,7 @@ export class NestContainer {
     if (!moduleRef) {
       throw new UnknownModuleException();
     }
+
     const providerKey = moduleRef.addProvider(provider, enhancerSubtype);
     const providerRef = moduleRef.getProviderByKey(providerKey);
 

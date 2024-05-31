@@ -56,18 +56,37 @@ import { ModuleDefinition } from './interfaces/module-definition.interface';
 import { ModuleOverride } from './interfaces/module-override.interface';
 import { MetadataScanner } from './metadata-scanner';
 
+/**
+ * 用于封装与应用程序提供者相关的信息，这些提供者可能是全局拦截器、守卫、管道
+ * 或过滤器等
+ */
 interface ApplicationProviderWrapper {
+  /**标识提供者所属的模块 */
   moduleKey: string;
+  /**提供者的唯一标识符，通常结合类型和可能的uuid来确保唯一性 */
   providerKey: string;
+  /**提供者的类型，如APP_INTERCEPTOR 或 APP_GUARD 等。 */
   type: InjectionToken;
+  /**定义提供者作用域，如单例或请求级别 */
   scope?: Scope;
 }
-
+/**
+ * 用于在扫描和注册模块时传递必要的参数，这些参数控制模块的加载和处理方式
+ */
 interface ModulesScanParameters {
+  /**当前要扫描的模块定义，可以是一个类、动态模块或通过forwardRef 引用的模块 */
   moduleDefinition: ModuleDefinition;
+   /**
+     * 记录依赖顺序，用于在错误处理时提供上下文信息，使得错误
+     * 更加易于理解和调试，因为它提供了一个清晰的模块加载和依赖调用链，
+     * 显示了错误发生时的具体位置和路径。
+    */
   scope?: Type<unknown>[];
+  /**包含已处理的模块的上下文，用于避免重复处理同一个模块 */
   ctxRegistry?: (ForwardReference | DynamicModule | Type<unknown>)[];
+  /**包含模块覆盖的定义，这在测试或特定环境下替换模块的实现时非常有用 */
   overrides?: ModuleOverride[];
+  /**指示是否应延迟加载模块 */
   lazy?: boolean;
 }
 
@@ -97,7 +116,9 @@ export class DependenciesScanner {
     await this.scanModulesForDependencies();
     /**计算模块之间的距离，这有助于确定模块加载和初始化的顺序 */
     this.calculateModulesDistance();
-
+    /**
+     * 
+     */
     this.addScopedEnhancersMetadata();
     /**绑定全局作用域 */
     this.container.bindGlobalScope();
@@ -114,7 +135,11 @@ export class DependenciesScanner {
     moduleDefinition,
     /**指示是否延迟加载模块 */
     lazy,
-    /**当前模块的作用域链，或者说依赖顺序链 */
+    /**
+     * 记录依赖顺序，用于在错误处理时提供上下文信息，使得错误
+     * 更加易于理解和调试，因为它提供了一个清晰的模块加载和依赖调用链，
+     * 显示了错误发生时的具体位置和路径。
+    */
     scope = [],
     /**一个包含已经处理过的模块的上下文注册表，防止重复处理同一个模块 */
     ctxRegistry = [],
@@ -200,7 +225,10 @@ export class DependenciesScanner {
     if (!moduleInstance) {
       return registeredModuleRefs;
     }
-    /** */
+    /**如果lazy为true并且moduleInserted为true（表示该模块已被添加），
+     * 方法的作用是将全局模块（如全局提供者、守卫、拦截器等）绑定到当前模块的导入列表中。
+     * 这确保了全局模块的功能可以在当前模块的上下文中被访问和使用。
+     */
     if (lazy && moduleInserted) {
       this.container.bindGlobalsToImports(moduleInstance);
     }
@@ -233,7 +261,7 @@ export class DependenciesScanner {
       : moduleDefinition;
     /**
      * 如果moduleToAdd是@Injectable、@Contriller()、@Catch()标记的类
-     * 那么无效类模块的异常，因为这些类型不能作为模块被注册
+     * 那么抛出无效类模块的异常，因为这些类型不能作为模块被注册
      */
     if (
       this.isInjectable(moduleToAdd) ||
@@ -247,11 +275,12 @@ export class DependenciesScanner {
   }
   /**
    * 
-   * @param modules 
+   * @param modules 从模块容器中获取应用中已注册的所有Module实例
    */
   public async scanModulesForDependencies(
     modules: Map<string, Module> = this.container.getModules(),
   ) {
+    /**遍历所有Module实例 */
     for (const [token, { metatype }] of modules) {
       await this.reflectImports(metatype, token, metatype.name);
       this.reflectProviders(metatype, token);
@@ -259,27 +288,53 @@ export class DependenciesScanner {
       this.reflectExports(metatype, token);
     }
   }
-
+  /**反射导入的模块，将导入模块插到module模块类对应的Module实例中的_imports集合 */
   public async reflectImports(
     module: Type<unknown>,
     token: string,
     context: string,
   ) {
     const modules = [
+      /**从module的元数据（@Module({imports: []})）中获取imports */
       ...this.reflectMetadata(MODULE_METADATA.IMPORTS, module),
+      /**使用token从container中的dynamicModulesMetadata属性中获取动态元数据，并返回元数据中的imports数组（假如有的话）*/
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.IMPORTS as 'imports',
       ),
     ];
+    /**遍历导入的模块 */
     for (const related of modules) {
       await this.insertImport(related, token, context);
     }
   }
 
+  /**将导入的模块加入到指定模块的Modules实例的_imports集合中 */
+  public async insertImport(related: any, token: string, context: string) {
+    /**related模块为undefined，抛出异常 */
+    if (isUndefined(related)) {
+      throw new CircularDependencyException(context);
+    } 
+    /**
+     * related模块为正向引用，则通过forwardRef()获取到实际的模块类，
+     * 并调用container的addImport方法，
+     * 最后添加到Modules实例的_imports集合中 
+     * */
+    if (this.isForwardReference(related)) {
+      return this.container.addImport(related.forwardRef(), token);
+    }
+    await this.container.addImport(related, token);
+  }
+  /**
+   * 反射模块的提供者
+   * @param module 
+   * @param token 
+   */
   public reflectProviders(module: Type<any>, token: string) {
     const providers = [
+      /**从module类（有@Module()装饰的类）的元数据中获取提供者数据 */
       ...this.reflectMetadata(MODULE_METADATA.PROVIDERS, module),
+      /**从动态模块数据中获取提供者数据（假如动态数据有providers） */
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.PROVIDERS as 'providers',
@@ -290,7 +345,110 @@ export class DependenciesScanner {
       this.reflectDynamicMetadata(provider, token);
     });
   }
-
+  /**
+   * @param provider 
+   * @param token 
+   * @returns 
+   * 用于将提供者（providers）插入到特定模块的容器中，这个方法处理不同
+   * 类型的提供者，包括类提供者（ClassProvider）、
+   * 值提供者（ValueProvider）、工厂提供者（FactoryProvider）
+   * 和已存在的提供者（ExistingProvider）
+   */
+  public insertProvider(provider: Provider, token: string) {
+    const isCustomProvider = this.isCustomProvider(provider);
+    /**
+     * 检查提供者是否为自定义提供者（即具有 provide 属性的提供者）。
+     * 这是通过 isCustomProvider 方法实现的。
+     */
+    if (!isCustomProvider) {
+      /**不是自定义提供者（@Injectable装饰的类），那么直接加入到modules的_providers集合中 */
+      return this.container.addProvider(provider as Type<any>, token);
+    }
+    /**
+     * 其中每个键是一个增强器类型（如 APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER），
+     * 每个值是一个函数，这个函数负责将对应的增强器添加到全局配置中
+     * 
+     * 因为使用useGlobalPipe等全局增强器注册函数注册的
+     * 增强器并没有办法向增强器里面注入依赖，因为它不属于任何一个模块，
+     * 所以为了解决这个问题，可以使用提供者的方式进行声明全局增强器，例如：
+     * 
+     * {
+     *    provide: 'APP_PIPE',
+     *    useClass: ...
+     * }
+     */
+    const applyProvidersMap = this.getApplyProvidersMap();
+    /**[APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER] */
+    const providersKeys = Object.keys(applyProvidersMap);
+    const type = (
+      provider as
+        | ClassProvider
+        | ValueProvider
+        | FactoryProvider
+        | ExistingProvider
+    ).provide;
+    /**是自定义提供者，但是非apply提供者 */
+    if (!providersKeys.includes(type as string)) {
+      return this.container.addProvider(provider as any, token);
+    }
+    /**以下处理apply提供者 */
+    /**生成uuid */
+    const uuid = UuidFactory.get(type.toString());
+    /**生成唯一标识符 */
+    const providerToken = `${type as string} (UUID: ${uuid})`;
+    /**
+     * 确定提供者的作用域（如单例、请求级别等）
+     */
+    let scope = (provider as ClassProvider | FactoryProvider).scope;
+    if (isNil(scope) && (provider as ClassProvider).useClass) {
+      /**通过装饰器标记获取元数据中的作用域配置 */
+      scope = getClassScope((provider as ClassProvider).useClass);
+    }
+    /** */
+    this.applicationProvidersApplyMap.push({
+      /**[APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER] */
+      type,
+      /**增强器所依附的模块 */
+      moduleKey: token,
+      /**增强器的标识符 */
+      providerKey: providerToken,
+      /**增强器的作用域 */
+      scope,
+    });
+    /**构建一个新的提供者对象，使用providerToken替换掉原
+     * 先的provide值 (APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER) */
+    const newProvider = {
+      ...provider,
+      provide: providerToken,
+      scope,
+    } as Provider;
+    /**设置增强器子类型"guard" | "interceptor" | "pipe" | "filter" */
+    const enhancerSubtype =
+      ENHANCER_TOKEN_TO_SUBTYPE_MAP[
+        type as
+          | typeof APP_GUARD
+          | typeof APP_PIPE
+          | typeof APP_FILTER
+          | typeof APP_INTERCEPTOR
+      ];
+    const factoryOrClassProvider = newProvider as
+      | FactoryProvider
+      | ClassProvider;
+    /**
+     * 如果提供者的作用域为请求作用域或者瞬态作用域，因为只有在这两种
+     * 作用域的情况下，才能对newProvider进行依赖注入
+     */
+    if (this.isRequestOrTransient(factoryOrClassProvider.scope)) {
+      return this.container.addInjectable(newProvider, token, enhancerSubtype);
+    }
+    /**将新提供者添加到Module实例的_providers集合中 */
+    this.container.addProvider(newProvider, token, enhancerSubtype);
+  }
+  /**
+   * 
+   * @param module 
+   * @param token 
+   */
   public reflectControllers(module: Type<any>, token: string) {
     const controllers = [
       ...this.reflectMetadata(MODULE_METADATA.CONTROLLERS, module),
@@ -304,7 +462,14 @@ export class DependenciesScanner {
       this.reflectDynamicMetadata(item, token);
     });
   }
-
+  /**
+   * 
+   * @param cls 
+   * @param token 
+   * @returns 
+   * 这个方法主要作用是从类的装饰器中提取与依赖注入相关的元数据，并将这些元数据
+   * 应用到依赖注入容器中，以便正确地配置和实例化依赖。
+   */
   public reflectDynamicMetadata(cls: Type<Injectable>, token: string) {
     if (!cls || !cls.prototype) {
       return;
@@ -315,6 +480,11 @@ export class DependenciesScanner {
     this.reflectInjectables(cls, token, PIPES_METADATA);
     this.reflectParamInjectables(cls, token, ROUTE_ARGS_METADATA);
   }
+  /**
+   * 
+   * @param module 
+   * @param token 
+   */
 
   public reflectExports(module: Type<unknown>, token: string) {
     const exports = [
@@ -328,12 +498,17 @@ export class DependenciesScanner {
       this.insertExportedProvider(exportedProvider, token),
     );
   }
-
+  /**
+   * @param component 
+   * @param token 
+   * @param metadataKey 
+   */
   public reflectInjectables(
     component: Type<Injectable>,
     token: string,
     metadataKey: string,
   ) {
+    /**获取component中有关metadataKey的元数据 */
     const controllerInjectables = this.reflectMetadata<Type<Injectable>>(
       metadataKey,
       component,
@@ -374,7 +549,12 @@ export class DependenciesScanner {
       );
     });
   }
-
+  /**
+   * 
+   * @param component 
+   * @param token 
+   * @param metadataKey 
+   */
   public reflectParamInjectables(
     component: Type<Injectable>,
     token: string,
@@ -465,17 +645,7 @@ export class DependenciesScanner {
     const rootModule = modulesGenerator.next().value as Module;
     calculateDistance(rootModule);
   }
-
-  public async insertImport(related: any, token: string, context: string) {
-    if (isUndefined(related)) {
-      throw new CircularDependencyException(context);
-    }
-    if (this.isForwardReference(related)) {
-      return this.container.addImport(related.forwardRef(), token);
-    }
-    await this.container.addImport(related, token);
-  }
-
+  /**是否为自定义提供者 */
   public isCustomProvider(
     provider: Provider,
   ): provider is
@@ -486,60 +656,6 @@ export class DependenciesScanner {
     return provider && !isNil((provider as any).provide);
   }
 
-  public insertProvider(provider: Provider, token: string) {
-    const isCustomProvider = this.isCustomProvider(provider);
-    if (!isCustomProvider) {
-      return this.container.addProvider(provider as Type<any>, token);
-    }
-    const applyProvidersMap = this.getApplyProvidersMap();
-    const providersKeys = Object.keys(applyProvidersMap);
-    const type = (
-      provider as
-        | ClassProvider
-        | ValueProvider
-        | FactoryProvider
-        | ExistingProvider
-    ).provide;
-
-    if (!providersKeys.includes(type as string)) {
-      return this.container.addProvider(provider as any, token);
-    }
-    const uuid = UuidFactory.get(type.toString());
-    const providerToken = `${type as string} (UUID: ${uuid})`;
-
-    let scope = (provider as ClassProvider | FactoryProvider).scope;
-    if (isNil(scope) && (provider as ClassProvider).useClass) {
-      scope = getClassScope((provider as ClassProvider).useClass);
-    }
-    this.applicationProvidersApplyMap.push({
-      type,
-      moduleKey: token,
-      providerKey: providerToken,
-      scope,
-    });
-
-    const newProvider = {
-      ...provider,
-      provide: providerToken,
-      scope,
-    } as Provider;
-
-    const enhancerSubtype =
-      ENHANCER_TOKEN_TO_SUBTYPE_MAP[
-        type as
-          | typeof APP_GUARD
-          | typeof APP_PIPE
-          | typeof APP_FILTER
-          | typeof APP_INTERCEPTOR
-      ];
-    const factoryOrClassProvider = newProvider as
-      | FactoryProvider
-      | ClassProvider;
-    if (this.isRequestOrTransient(factoryOrClassProvider.scope)) {
-      return this.container.addInjectable(newProvider, token, enhancerSubtype);
-    }
-    this.container.addProvider(newProvider, token, enhancerSubtype);
-  }
 
   public insertInjectable(
     injectable: Type<Injectable> | object,
@@ -770,16 +886,28 @@ export class DependenciesScanner {
       },
     );
   }
-
+  /**
+   * 用于获取一个映射，该映射定义了不同类型的全局增强器（如拦截器、守卫、管道和过滤器）如何被应用到整个应用中
+   * 这个方法是框架内部用于配置和管理全局增强器的一部分，确保这些增强器能够在应用的所有上下文中正确地工作
+   */
   public getApplyProvidersMap(): { [type: string]: Function } {
+    /**
+     * 方法返回一个对象，其中每个键是一个增强器类型（如 APP_INTERCEPTOR, APP_PIPE, APP_GUARD, APP_FILTER），
+     * 每个值是一个函数，这个函数负责将对应的增强器添加到全局配置中。
+     */
     return {
       [APP_INTERCEPTOR]: (interceptor: NestInterceptor) =>
+      /**全局拦截器，用于拦截和处理应用中的请求。 */
         this.applicationConfig.addGlobalInterceptor(interceptor),
+
       [APP_PIPE]: (pipe: PipeTransform) =>
+      /**全局管道，用于处理和转换请求数据 */
         this.applicationConfig.addGlobalPipe(pipe),
       [APP_GUARD]: (guard: CanActivate) =>
+      /**全局守卫，用于在请求被处理前进行权限检查。 */
         this.applicationConfig.addGlobalGuard(guard),
       [APP_FILTER]: (filter: ExceptionFilter) =>
+      /**全局异常过滤器，用于捕获和处理异常。 */
         this.applicationConfig.addGlobalFilter(filter),
     };
   }
@@ -833,6 +961,17 @@ export class DependenciesScanner {
   ): module is ForwardReference {
     return module && !!(module as ForwardReference).forwardRef;
   }
+  /**
+   * 生命周期策略
+   * 1. Singleton:单例模式下，提供者的实例在整个应用程序中是共享的。
+   * 一旦被创建，相同的实例会在每次注入时被复用。
+   * 2. Request:
+   * 请求级别的提供者为每个请求创建一个新的实例。
+   * 这对于处理请求特定的数据非常有用，例如，用户身份验证或在请求期间保持状态。
+   * 3. Transient:
+   * 瞬态提供者每次注入时都会创建一个新的实例。这提供了最大的灵活性，
+   * 但也可能导致更高的性能开销，因为每次依赖解析时都需要实例化。
+   */
 
   private isRequestOrTransient(scope: Scope): boolean {
     return scope === Scope.REQUEST || scope === Scope.TRANSIENT;

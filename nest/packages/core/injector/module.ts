@@ -399,12 +399,15 @@ export class Module {
   public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
     /**如果是自定义提供者 */
     if (this.isCustomProvider(provider)) {
+      /**判断是否是入口提供者 */
       if (this.isEntryProvider(provider.provide)) {
+        /**如果是入口提供者，就添加到_entryProviderKeys集合中 */
         this._entryProviderKeys.add(provider.provide);
       }
+      /**将自定义提供者添加到_providers集合中 */
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);
     }
-
+    /**不是自定义提供者，普通的类提供者（@Injectable()） */
     this._providers.set(
       provider,
       new InstanceWrapper({
