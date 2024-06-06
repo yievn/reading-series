@@ -16,8 +16,9 @@ export function applyDecorators(
     propertyKey?: string | symbol,
     descriptor?: TypedPropertyDescriptor<Y>,
   ) => {
+    /**遍历修饰器 */
     for (const decorator of decorators) {
-      /**类修饰器 */
+      /**应用在类上面的装饰器，遍历调用，并将类传入 */
       if (target instanceof Function && !descriptor) {
         (decorator as ClassDecorator)(target);
         continue;

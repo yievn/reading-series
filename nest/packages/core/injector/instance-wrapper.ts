@@ -19,7 +19,9 @@ import {
 import { Module } from './module';
 import { SettlementSignal } from './settlement-signal';
 
+/**实例元数据缓存键 */
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
+/**实例元数据ID键 */
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
 
 export interface HostComponentInfo {

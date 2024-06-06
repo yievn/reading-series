@@ -8,6 +8,8 @@ import { validateEach } from '../../utils/validate-each.util';
 /**
  * Decorator that binds exception filters to the scope of the controller or
  * method, depending on its context.
+ * 
+ * 根据上下文将异常过滤器绑定到控制器或方法的作用域的装饰器。
  *
  * When `@UseFilters` is used at the controller level, the filter will be
  * applied to every handler (method) in the controller.
@@ -25,11 +27,15 @@ import { validateEach } from '../../utils/validate-each.util';
  * using `app.useGlobalFilters()`.  [See here for details](https://docs.nestjs.com/exception-filters#binding-filters)
  *
  * @publicApi
+ * 
+ * 
  */
 
 export const UseFilters = (...filters: (ExceptionFilter | Function)[]) =>
   addExceptionFiltersMetadata(...filters);
-
+/**
+ * 添加异常过滤器
+ */
 function addExceptionFiltersMetadata(
   ...filters: (Function | ExceptionFilter)[]
 ): MethodDecorator & ClassDecorator {

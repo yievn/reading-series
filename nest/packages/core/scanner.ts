@@ -369,7 +369,7 @@ export class DependenciesScanner {
      * 每个值是一个函数，这个函数负责将对应的增强器添加到全局配置中
      * 
      * 因为使用useGlobalPipe等全局增强器注册函数注册的
-     * 增强器并没有办法向增强器里面注入依赖，因为它不属于任何一个模块，
+     * 增强器，nest并没有办法向增强器里面注入依赖，因为它不属于任何一个模块，
      * 所以为了解决这个问题，可以使用提供者的方式进行声明全局增强器，例如：
      * 
      * {
@@ -401,6 +401,7 @@ export class DependenciesScanner {
      */
     let scope = (provider as ClassProvider | FactoryProvider).scope;
     if (isNil(scope) && (provider as ClassProvider).useClass) {
+      /**如果是类提供者 */
       /**通过装饰器标记获取元数据中的作用域配置 */
       scope = getClassScope((provider as ClassProvider).useClass);
     }
@@ -513,8 +514,11 @@ export class DependenciesScanner {
       metadataKey,
       component,
     );
+    /**获取原型上所有的方法上有关metadataKey的元数据 */
     const methodInjectables = this.metadataScanner
+    /**获取原型上所有的方法 */
       .getAllMethodNames(component.prototype)
+      /**遍历所有方法，从方法对象上提取有关metadataKey的元数据 */
       .reduce((acc, method) => {
         const methodInjectable = this.reflectKeyMetadata(
           component,
@@ -601,16 +605,21 @@ export class DependenciesScanner {
   ): { methodKey: string; metadata: any } | undefined {
     let prototype = component.prototype;
     do {
+      /**获取方法的描述符对象 */
       const descriptor = Reflect.getOwnPropertyDescriptor(prototype, methodKey);
+      /**不存在描述符对象则跳过，防出错 */
       if (!descriptor) {
         continue;
       }
+      /**在描述符对象上获取key对应的元数据*/
       const metadata = Reflect.getMetadata(key, descriptor.value);
       if (!metadata) {
         return;
       }
+      /**返回元数据和方法键组成的对象 */
       return { methodKey, metadata };
     } while (
+      /**回溯原型对象知道，原型为空或者为Object.prototype */
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype !== Object.prototype &&
       prototype
@@ -656,14 +665,25 @@ export class DependenciesScanner {
     return provider && !isNil((provider as any).provide);
   }
 
-
+  /**用于将依赖注入的实例（如服务、拦截器、守卫等）注册到应用的依赖注入容器中，
+   * 这个方法通常在框架的启动阶段或者在模块动态加载时被调用，以确保所有的依赖都被
+   * 正确地管理和可用
+   */
   public insertInjectable(
+    /**要注册的依赖实例，可以是一个类或者一个对象 */
     injectable: Type<Injectable> | object,
+    /**用于在依赖注入容器中标识模块或提供者的令牌 */
     token: string,
+    /**宿主类，通常是依赖被注入的类，或者说是元数据依附的类 */
     host: Type<Injectable>,
+    /**增强器的子类型，如拦截器、守卫等 */
     subtype: EnhancerSubtype,
+    /**如果依赖是与特定方法相关联的。这里指定方法的名称 */
     methodKey?: string,
   ) {
+    /**检查injectable是否为函数（通常是类），如果是，他将通过addInjectable将其
+     * 添加到依赖注入容器
+     */
     if (isFunction(injectable)) {
       const instanceWrapper = this.container.addInjectable(
         injectable as Type,
@@ -797,7 +817,12 @@ export class DependenciesScanner {
       scope,
     );
   }
-
+  /**
+   * 
+   * @param metadataKey 元数据键
+   * @param metatype 
+   * @returns 
+   */
   public reflectMetadata<T = any>(
     metadataKey: string,
     metatype: Type<any>,
