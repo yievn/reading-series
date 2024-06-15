@@ -474,9 +474,13 @@ export class DependenciesScanner {
     if (!cls || !cls.prototype) {
       return;
     }
+    /**扫描cls中有关守卫的元数据 */
     this.reflectInjectables(cls, token, GUARDS_METADATA);
+    /**扫描cls中有关拦截器的元数据 */
     this.reflectInjectables(cls, token, INTERCEPTORS_METADATA);
+    /**扫描cls中有关异常过滤器的元数据 */
     this.reflectInjectables(cls, token, EXCEPTION_FILTERS_METADATA);
+    /**扫描cls中有关管道的元数据 */
     this.reflectInjectables(cls, token, PIPES_METADATA);
     this.reflectParamInjectables(cls, token, ROUTE_ARGS_METADATA);
   }
