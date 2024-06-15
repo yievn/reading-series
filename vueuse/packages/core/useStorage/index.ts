@@ -65,7 +65,6 @@ export interface StorageEventLike {
 export interface UseStorageOptions<T> extends ConfigurableEventFilter, ConfigurableWindow, ConfigurableFlush {
   /**
    * Watch for deep changes
-   *
    * @default true
    */
   deep?: boolean

@@ -24,6 +24,9 @@ import { validateEach } from '../../utils/validate-each.util';
  * using `app.useGlobalGuards()`.  [See here for details](https://docs.nestjs.com/guards#binding-guards)
  *
  * @publicApi
+ * 用于将守卫（Guards）应用于控制器或特定的路由处理方法。守卫是nest中用于实现授权
+ * 和认证逻辑的组件，UseGuards可以在类级别或方法级别使用，从而提供灵活的权限控制
+ * 
  */
 export function UseGuards(
   ...guards: (CanActivate | Function)[]
@@ -33,11 +36,18 @@ export function UseGuards(
     key?: string | symbol,
     descriptor?: TypedPropertyDescriptor<any>,
   ) => {
+    /**验证每一个守卫是否有效，有效的守卫应该是一个类或者是一个实例，并且实例的canActivate
+     * 是一个函数
+     */
     const isGuardValid = <T extends Function | Record<string, any>>(guard: T) =>
       guard &&
       (isFunction(guard) ||
         isFunction((guard as Record<string, any>).canActivate));
-
+    /**
+     * 如果descriptor存在，那么装饰器用于方法，则将守卫信息添加到
+     * 方法的元数据中；如果不存在，那么装饰器用于类上，则将守卫信息添加到类的
+     * 元数据中。
+     */
     if (descriptor) {
       validateEach(
         target.constructor,

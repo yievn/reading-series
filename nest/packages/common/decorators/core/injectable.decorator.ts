@@ -57,6 +57,7 @@ export function Injectable(options?: InjectableOptions): ClassDecorator {
 
 /**
  * @publicApi
+ * 动态标记可注入类
  */
 export function mixin<T>(mixinClass: Type<T>) {
   Object.defineProperty(mixinClass, 'name', {

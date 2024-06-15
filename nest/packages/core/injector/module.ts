@@ -380,8 +380,6 @@ export class Module {
      * 中找到对应的InstanceWrapper实例，如果找到host对应的InstanceWrapper实例，
      * 那么会将当前injectable的instanceWrapper实例添加到宿主instanceWrapper
      * 实例上的enhandlers上。
-     * 
-     * 
      */
     if (host) {
       const hostWrapper =
@@ -525,7 +523,9 @@ export class Module {
     const token = provider.provide;
     /**将自定义提供者添加到_providers中 */
     collection.set(
+      /** */
       token,
+      /** */
       new InstanceWrapper({
         token,
         name: useClass?.name || useClass,

@@ -5,12 +5,18 @@ export interface RequestMappingMetadata {
   path?: string | string[];
   method?: RequestMethod;
 }
-
+/**
+ * 默认元数据
+ */
 const defaultMetadata = {
   [PATH_METADATA]: '/',
   [METHOD_METADATA]: RequestMethod.GET,
 };
-
+/**
+ * 
+ * @param metadata 
+ * @returns 
+ */
 export const RequestMapping = (
   metadata: RequestMappingMetadata = defaultMetadata,
 ): MethodDecorator => {

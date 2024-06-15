@@ -44,13 +44,18 @@ function addExceptionFiltersMetadata(
     key?: string | symbol,
     descriptor?: TypedPropertyDescriptor<any>,
   ) => {
+    /**
+     * 校验过滤器是否有效，filter可以为类（但是如果不是继承过滤器接口，会报错），这时由框架承担实例化责任并启用依赖注入，也可以是
+     * 继承自过滤器接口的类的实例
+     */
     const isFilterValid = <T extends Function | Record<string, any>>(
       filter: T,
-    ) =>
+    ) => 
       filter &&
       (isFunction(filter) || isFunction((filter as Record<string, any>).catch));
-
+    /**描述符对象存在，说明过滤器使用在方法上 */
     if (descriptor) {
+      /**校验传入参数，校验filters中过滤是否是有效过滤器 */
       validateEach(
         target.constructor,
         filters,
@@ -58,6 +63,7 @@ function addExceptionFiltersMetadata(
         '@UseFilters',
         'filter',
       );
+      /**将过滤器添加到descriptor.value方法对象元数据中 */
       extendArrayMetadata(
         EXCEPTION_FILTERS_METADATA,
         filters,
