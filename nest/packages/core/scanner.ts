@@ -512,14 +512,20 @@ export class DependenciesScanner {
     token: string,
     metadataKey: string,
   ) {
-    /**获取component中有关metadataKey的元数据 */
+    /**获取component中有关metadataKey的元数据
+     * 
+     使用 reflectMetadata 方法从组件（类）的装饰器中提取与 metadataKey 相关的元数据。
+      这些元数据通常通过装饰器（如 @UseGuards, @UseInterceptors 等）应用于类。
+     */
     const controllerInjectables = this.reflectMetadata<Type<Injectable>>(
       metadataKey,
       component,
     );
+    /**提取类原型对象上方法的元数据 */
     const methodInjectables = this.metadataScanner
       .getAllMethodNames(component.prototype)
       .reduce((acc, method) => {
+        /**获取在component中该方法有关metadataKey的元数据 */
         const methodInjectable = this.reflectKeyMetadata(
           component,
           metadataKey,
