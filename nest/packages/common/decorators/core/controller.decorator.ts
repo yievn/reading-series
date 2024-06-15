@@ -36,11 +36,11 @@ export interface ControllerOptions extends ScopeOptions, VersionOptions {
    * 
    * 例如，如果你只想让某个控制器响应来自特定子域的请求，你可以这样配置：
    * @Controller({
-  host: 'api.example.com'
-})
-class ExampleController {
-  // 控制器方法
-}
+      host: 'api.example.com'
+    })
+    class ExampleController {
+      // 控制器方法
+    }
    *
    * @see [Routing](https://docs.nestjs.com/controllers#routing)
    */

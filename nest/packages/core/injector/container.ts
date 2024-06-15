@@ -343,21 +343,24 @@ export class NestContainer {
   ): string | symbol | Function {
     /**通过token拿到Module实例 */
     const moduleRef = this.modules.get(token);
+    /**当出现循环依赖时，provider为undefined */
     if (!provider) {
       throw new CircularDependencyException(moduleRef?.metatype.name);
     }
+    /**该模块还没被扫描 */
     if (!moduleRef) {
       throw new UnknownModuleException();
     }
-
+    /**为提供者创建InstanceWrapper实例，并添加到_providers集合中 */
     const providerKey = moduleRef.addProvider(provider, enhancerSubtype);
+    /**通过providerKey从_providers集合获取该提供者对应的InstanceWrapper实例*/
     const providerRef = moduleRef.getProviderByKey(providerKey);
 
     DiscoverableMetaHostCollection.inspectProvider(this.modules, providerRef);
 
     return providerKey as Function;
   }
-
+  /**用于向特定模块的依赖注入容器中添加一个可注入的提供者（如服务、拦截器、守卫）等 */
   public addInjectable(
     injectable: Provider,
     token: string,
@@ -392,6 +395,7 @@ export class NestContainer {
       controllerRef,
     );
   }
+  
   /**清空模块容器 */
   public clear() {
     this.modules.clear();

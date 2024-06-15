@@ -103,11 +103,11 @@ export const SSE_METADATA = '__sse__';
 /**标注版本号 */
 export const VERSION_METADATA = '__version__';
 /**这些常量用于标记类或提供者的特定角色或特性，如可注入的、控制器、异常过滤器、入口提供者等 */
-export const INJECTABLE_WATERMARK = '__injectable__';
+export const INJECTABLE_WATERMARK = '__injectable__'; // 可注入标志，通常值为true
 /**标注一个类为controller */
-export const CONTROLLER_WATERMARK = '__controller__';
+export const CONTROLLER_WATERMARK = '__controller__'; // 控制器标志，通常值为true
 /**标注一个类为异常过滤器 */
-export const CATCH_WATERMARK = '__catch__';
+export const CATCH_WATERMARK = '__catch__'; // 异常过滤器标志，通常值为true
 /**用于标识一个类为入口提供者的常量，表示该类具有特定的角色或特性，在框架中可能会被用于特殊处理或识别 */
 /**
  * 入口提供者通常具有以下特点：

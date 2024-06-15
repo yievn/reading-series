@@ -1,3 +1,9 @@
+/**
+ * 扩展数组数据
+ * @param key 
+ * @param metadata 
+ * @param target 
+ */
 export function extendArrayMetadata<T extends Array<unknown>>(
   key: string,
   metadata: T,
