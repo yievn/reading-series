@@ -61,11 +61,17 @@ export class MongooseCoreModule implements OnApplicationShutdown {
     };
 
     const connectionProvider = {
+      /**mongooseConnectionName是一个动态生成的令牌，用于在nest的依赖注入系统中唯一标识这个MongoDB链接 */
       provide: mongooseConnectionName,
       useFactory: async (): Promise<any> =>
         await lastValueFrom(
+          /**defer：创建一个Observable，它在被订阅时才会执行提供的工厂函数，这确保了MongoDB连接的创建
+           * 是按需进行的
+           */
           defer(async () =>
+            /**允许用户对创建的连接进一步的配置或封装 */
             mongooseConnectionFactory(
+              /**用于十几创建MongoDB连接，它接受uri和连接选项作为参数，并处理连接的创建 */
               await this.createMongooseConnection(uri, mongooseOptions, {
                 lazyConnection,
                 onConnectionCreate,
@@ -73,7 +79,9 @@ export class MongooseCoreModule implements OnApplicationShutdown {
               mongooseConnectionName,
             ),
           ).pipe(
+            /**重试机制，它根据 retryAttempts, retryDelay参数进行配置，用于在连接失败时重试*/
             handleRetry(retryAttempts, retryDelay),
+            /**捕获连接过程中的任何错误，并通过mongooseConnectionError函数处理，并抛出一个错误 */
             catchError((error) => {
               throw mongooseConnectionError(error);
             }),

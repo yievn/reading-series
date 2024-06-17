@@ -24,6 +24,8 @@ import { validateEach } from '../../utils/validate-each.util';
  * using `app.useGlobalPipes()`.  [See here for details](https://docs.nestjs.com/pipes#class-validator)
  *
  * @publicApi
+ * 用于将管道应用于控制器或特定的控制器方法。管道主要用于处理输入数据的验证和
+ * 转换，确保传入的数据符合预期的格式，并进行适当的处理。
  */
 
 export function UsePipes(
@@ -37,7 +39,7 @@ export function UsePipes(
     const isPipeValid = <T extends Function | Record<string, any>>(pipe: T) =>
       pipe &&
       (isFunction(pipe) || isFunction((pipe as Record<string, any>).transform));
-
+    /**描述符对象存在，说明该修饰符是应用在控制器方法上 */
     if (descriptor) {
       extendArrayMetadata(PIPES_METADATA, pipes, descriptor.value);
       return descriptor;

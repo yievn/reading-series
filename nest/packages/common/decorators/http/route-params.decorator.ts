@@ -134,12 +134,16 @@ const createPipesRouteParamDecorator =
     ...pipes: (Type<PipeTransform> | PipeTransform)[]
   ): ParameterDecorator =>
   (target, key, index) => {
+    /**获取路由参数元数据 */
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+    /**如果传入的data是null或者undefined，或者是字符串 */
     const hasParamData = isNil(data) || isString(data);
+    /**要不就是没有值，就不就只能是字符串 */
     const paramData = hasParamData ? data : undefined;
+    /**如果data是除了null、undefined、string之外的数据类型，那么默认都是管道类 */
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
-
+    
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
       assignMetadata(args, paramtype, index, paramData, ...paramPipes),
@@ -176,6 +180,10 @@ export const Response: (
   options?: ResponseDecoratorOptions,
 ) => ParameterDecorator =
   (options?: ResponseDecoratorOptions) => (target, key, index) => {
+    /**
+     * 默认值为false，这意味着默认情况下，nest会自动处理响应，开发者不需要
+     * 手动调用例如res.end()或res.json()这样的方法
+     */
     if (options?.passthrough) {
       Reflect.defineMetadata(
         RESPONSE_PASSTHROUGH_METADATA,

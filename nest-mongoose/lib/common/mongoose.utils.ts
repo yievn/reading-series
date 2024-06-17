@@ -9,7 +9,7 @@ export function getModelToken(model: string, connectionName?: string) {
   }
   return `${getConnectionToken(connectionName)}/${model}Model`;
 }
-
+/**如果有链接名并且连接名不等于默认连接名，那么就用传入的连接名拼接一个 */
 export function getConnectionToken(name?: string) {
   return name && name !== DEFAULT_DB_CONNECTION
     ? `${name}Connection`
