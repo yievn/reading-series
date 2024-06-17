@@ -59,6 +59,8 @@ import { MetadataScanner } from './metadata-scanner';
 /**
  * 用于封装与应用程序提供者相关的信息，这些提供者可能是全局拦截器、守卫、管道
  * 或过滤器等
+ * 
+ * 
  */
 interface ApplicationProviderWrapper {
   /**标识提供者所属的模块 */
@@ -297,7 +299,8 @@ export class DependenciesScanner {
     const modules = [
       /**从module的元数据（@Module({imports: []})）中获取imports */
       ...this.reflectMetadata(MODULE_METADATA.IMPORTS, module),
-      /**使用token从container中的dynamicModulesMetadata属性中获取动态元数据，并返回元数据中的imports数组（假如有的话）*/
+      /**使用token从container中的dynamicModulesMetadata属性中获取动态元数据，
+       * 并返回元数据中的imports数组（假如有的话）*/
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.IMPORTS as 'imports',
@@ -449,6 +452,8 @@ export class DependenciesScanner {
    * 
    * @param module 
    * @param token 
+   * 
+   * 
    */
   public reflectControllers(module: Type<any>, token: string) {
     const controllers = [
@@ -465,8 +470,8 @@ export class DependenciesScanner {
   }
   /**
    * 
-   * @param cls 
-   * @param token 
+   * @param cls 提供者类或者控制器类
+   * @param token 当前提供者所在的类
    * @returns 
    * 这个方法主要作用是从类的装饰器中提取与依赖注入相关的元数据，并将这些元数据
    * 应用到依赖注入容器中，以便正确地配置和实例化依赖。
@@ -485,6 +490,7 @@ export class DependenciesScanner {
    * 
    * @param module 
    * @param token 
+   * 
    */
 
   public reflectExports(module: Type<unknown>, token: string) {
@@ -518,7 +524,7 @@ export class DependenciesScanner {
     const methodInjectables = this.metadataScanner
     /**获取原型上所有的方法 */
       .getAllMethodNames(component.prototype)
-      /**遍历所有方法，从方法对象上提取有关metadataKey的元数据 */
+      /**遍历所有方法，从方法对象上提取有关 */
       .reduce((acc, method) => {
         const methodInjectable = this.reflectKeyMetadata(
           component,
@@ -727,7 +733,7 @@ export class DependenciesScanner {
     moduleDefinition: ModuleDefinition,
     /**一个包含模块覆盖信息的数组 */
     overrides: ModuleOverride[],
-    /**当前模块的作用域链，用于处理模块间的依赖和继承 */
+    /**当前模块的作用域链，用于记录模块的处理路径，当执行报错时，便于查看调试 */
     scope: Type<unknown>[],
   ): Promise<
     | {

@@ -314,7 +314,11 @@ export class NestContainer {
     relatedModule: Type<any> | DynamicModule,
     token: string,
   ) {
-    /**该模块已经存在了 */
+    /**当前模块不存在，那么就没必要进行下去了*/
+    /**理论上，一旦一个模块通过正常的启动和注册流程被加载，它就应该存在于modules，
+     * 但是为了代码的健壮性，这种防御性检查是必不可少的，可以防止在未来的变动中减少
+     * 错误的发生
+     */
     if (!this.modules.has(token)) {
       return;
     }

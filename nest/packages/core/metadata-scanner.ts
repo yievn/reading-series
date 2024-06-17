@@ -89,7 +89,7 @@ export class MetadataScanner {
     yield* this.getAllMethodNames(prototype);
   }
 
-  public 获取原型上所有的方法getAllMethodNames(prototype: object | null): string[] {
+  public getAllMethodNames(prototype: object | null): string[] {
     if (!prototype) {
       return [];
     }
