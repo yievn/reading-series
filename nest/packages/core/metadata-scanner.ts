@@ -93,7 +93,7 @@ export class MetadataScanner {
     if (!prototype) {
       return [];
     }
-
+    /**缓存里存在该原型对象，则返回之前扫描的结果 */
     if (this.cachedScannedPrototypes.has(prototype)) {
       return this.cachedScannedPrototypes.get(prototype);
     }
@@ -105,15 +105,18 @@ export class MetadataScanner {
 
     do {
       for (const property of Object.getOwnPropertyNames(prototype)) {
+        /**已经遍历过了，就直接跳过 */
         if (visitedNames.has(property)) {
           continue;
         }
-
+        /**设置改属性已被遍历 */
         visitedNames.set(property, true);
 
         // reason: https://github.com/nestjs/nest/pull/10821#issuecomment-1411916533
         const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
-
+        /**
+         * 如果是访问器属性、非函数属性以及构造器属性，则直接跳过
+         */
         if (
           descriptor.set ||
           descriptor.get ||
@@ -122,10 +125,11 @@ export class MetadataScanner {
         ) {
           continue;
         }
-
+        /**将属性添加到result中 */
         result.push(property);
       }
     } while (
+      /**回溯原型对象，直到prototype为null或者为Object.prototype */
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype !== Object.prototype
     );

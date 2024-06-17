@@ -119,7 +119,14 @@ function createRouteParamDecorator(paramtype: RouteParamtypes) {
       );
     };
 }
-
+/**
+ * 
+ * @param paramtype 
+ * @returns 
+ * 用于创建路由处理器参数装饰器，这些装饰器与管道（pipes）一起使用。管道主要用于参数的验证
+ * 和转换，确保传入的数据符合预期格式，并进行适当的处理。这个工厂函数允许开发者自定义参数装饰器
+ * 并在装饰器中嵌入管道逻辑，从而实现
+ */
 const createPipesRouteParamDecorator =
   (paramtype: RouteParamtypes) =>
   (

@@ -480,9 +480,13 @@ export class DependenciesScanner {
     if (!cls || !cls.prototype) {
       return;
     }
+    /**扫描cls中有关守卫的元数据 */
     this.reflectInjectables(cls, token, GUARDS_METADATA);
+    /**扫描cls中有关拦截器的元数据 */
     this.reflectInjectables(cls, token, INTERCEPTORS_METADATA);
+    /**扫描cls中有关异常过滤器的元数据 */
     this.reflectInjectables(cls, token, EXCEPTION_FILTERS_METADATA);
+    /**扫描cls中有关管道的元数据 */
     this.reflectInjectables(cls, token, PIPES_METADATA);
     this.reflectParamInjectables(cls, token, ROUTE_ARGS_METADATA);
   }
@@ -515,7 +519,11 @@ export class DependenciesScanner {
     token: string,
     metadataKey: string,
   ) {
-    /**获取component中有关metadataKey的元数据 */
+    /**获取component中有关metadataKey的元数据
+     * 
+     使用 reflectMetadata 方法从组件（类）的装饰器中提取与 metadataKey 相关的元数据。
+      这些元数据通常通过装饰器（如 @UseGuards, @UseInterceptors 等）应用于类。
+     */
     const controllerInjectables = this.reflectMetadata<Type<Injectable>>(
       metadataKey,
       component,
@@ -526,6 +534,7 @@ export class DependenciesScanner {
       .getAllMethodNames(component.prototype)
       /**遍历所有方法，从方法对象上提取有关 */
       .reduce((acc, method) => {
+        /**获取在component中该方法有关metadataKey的元数据 */
         const methodInjectable = this.reflectKeyMetadata(
           component,
           metadataKey,
