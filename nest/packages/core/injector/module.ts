@@ -360,7 +360,7 @@ export class Module {
     let instanceWrapper = this.injectables.get(injectable);
     if (!instanceWrapper) {
       /**如果不存在，那么创建一个新的InstanceWrapper实例， 
-       * InstanceWrapper实例包含了提供者的类型、实例、j
+       * InstanceWrapper实例包含了提供者的类型、实例、
       */
       instanceWrapper = new InstanceWrapper({
         token: injectable,
@@ -405,7 +405,7 @@ export class Module {
       /**将自定义提供者添加到_providers集合中 */
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);
     }
-    /**不是自定义提供者，普通的类提供者（@Injectable()） */
+    /**不是自定义提供者，普通的类提供者 */
     this._providers.set(
       provider,
       new InstanceWrapper({
