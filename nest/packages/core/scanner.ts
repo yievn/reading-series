@@ -469,9 +469,8 @@ export class DependenciesScanner {
     });
   }
   /**
-   * 
    * @param cls 提供者类或者控制器类
-   * @param token 当前提供者所在的类
+   * @param token 当前提供模块的token
    * @returns 
    * 这个方法主要作用是从类的装饰器中提取与依赖注入相关的元数据，并将这些元数据
    * 应用到依赖注入容器中，以便正确地配置和实例化依赖。
@@ -513,8 +512,10 @@ export class DependenciesScanner {
    * @param component 
    * @param token 
    * @param metadataKey 
+   * 将component类
    */
   public reflectInjectables(
+    /**提供者或者控制器类 */
     component: Type<Injectable>,
     token: string,
     metadataKey: string,
@@ -547,12 +548,17 @@ export class DependenciesScanner {
 
         return acc;
       }, []);
-
+    /** */
     controllerInjectables.forEach(injectable =>
       this.insertInjectable(
+        /**增强器类或增强器实例 */
         injectable,
+        /**当前模块的token */
         token,
+        /**提供者或控制器类 */
         component,
+        /**增强器键guard、interceptor、pipe、 */
+        /**增强器键guard、interceptor、pipe、 */
         ENHANCER_KEY_TO_SUBTYPE_MAP[metadataKey],
       ),
     );
@@ -613,9 +619,15 @@ export class DependenciesScanner {
     });
   }
 
+  /**
+   * 获取方法对象上的指定元数据键的元数据
+   */
   public reflectKeyMetadata(
+    /**可注入类 */
     component: Type<Injectable>,
+    /**元数据键 */
     key: string,
+    /**方法名 */
     methodKey: string,
   ): { methodKey: string; metadata: any } | undefined {
     let prototype = component.prototype;
@@ -634,7 +646,7 @@ export class DependenciesScanner {
       /**返回元数据和方法键组成的对象 */
       return { methodKey, metadata };
     } while (
-      /**回溯原型对象知道，原型为空或者为Object.prototype */
+      /**回溯原型对象直到原型为空或者为Object.prototype */
       (prototype = Reflect.getPrototypeOf(prototype)) &&
       prototype !== Object.prototype &&
       prototype
@@ -689,9 +701,9 @@ export class DependenciesScanner {
     injectable: Type<Injectable> | object,
     /**用于在依赖注入容器中标识模块或提供者的令牌 */
     token: string,
-    /**宿主类，通常是依赖被注入的类，或者说是元数据依附的类 */
+    /**通常是依赖被注入的类，或者说是元数据依附的类，例如提供者类或者控制器类 */
     host: Type<Injectable>,
-    /**增强器的子类型，如拦截器、守卫等 */
+    /**增强器键， "guard" | "interceptor" | "pipe" | "filter" */
     subtype: EnhancerSubtype,
     /**如果依赖是与特定方法相关联的。这里指定方法的名称 */
     methodKey?: string,
