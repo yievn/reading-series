@@ -711,7 +711,7 @@ export class DependenciesScanner {
     /**检查injectable是否为函数（通常是类），如果是，他将通过addInjectable将其
      * 添加到依赖注入容器
      * 
-     * 为啥只有类才会调用addInjectable加入到module的_injectable集合中，因为只有类才可以确保通过构造函数
+     * 只有类才会调用addInjectable加入到module的_injectable集合中，因为只有类才可以确保通过构造函数
      * 注入访问所需的依赖。
      */
     if (isFunction(injectable)) {
