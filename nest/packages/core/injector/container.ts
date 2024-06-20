@@ -385,14 +385,20 @@ export class NestContainer {
     const moduleRef = this.modules.get(token);
     moduleRef.addExportedProvider(provider);
   }
-
+  /**
+   * 
+   * @param controller 要被插入集合的控制器类
+   * @param token 当前模块Token
+   */
   public addController(controller: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
+    /**获取Module实例引用 */
     const moduleRef = this.modules.get(token);
+    /**将controller加入到Module实例中的_controllers集合中 */
     moduleRef.addController(controller);
-
+    /**获取controller的InstanceWrapper包装器实例 */
     const controllerRef = moduleRef.controllers.get(controller);
     DiscoverableMetaHostCollection.inspectController(
       this.modules,

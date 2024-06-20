@@ -278,6 +278,9 @@ export class DependenciesScanner {
   /**
    * 
    * @param modules 从模块容器中获取应用中已注册的所有Module实例
+   * 
+   * 遍历所有模块，扫描模块的imports、providers、controllers、exports，并将他们添加到各自的模块中的_imports、_providers、_controllers、_exports集合中，
+   * 对于providers和controllers，如果是
    */
   public async scanModulesForDependencies(
     modules: Map<string, Module> = this.container.getModules(),
@@ -449,15 +452,14 @@ export class DependenciesScanner {
     this.container.addProvider(newProvider, token, enhancerSubtype);
   }
   /**
-   * 
-   * @param module 
-   * @param token 
-   * 
-   * 
+   * @param module 当前模块类
+   * @param token 当前模块的token
    */
   public reflectControllers(module: Type<any>, token: string) {
     const controllers = [
+      /**从模块@Module 元数据中获取controllers */
       ...this.reflectMetadata(MODULE_METADATA.CONTROLLERS, module),
+      /**当模块为动态模块时，从模块的动态配置中获取controllers */
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.CONTROLLERS as 'controllers',
@@ -491,11 +493,10 @@ export class DependenciesScanner {
   }
   /**
    * 
-   * @param module 
-   * @param token 
+   * @param module 当前模块
+   * @param token 当前模块对应的Token
    * 
    */
-
   public reflectExports(module: Type<unknown>, token: string) {
     const exports = [
       ...this.reflectMetadata(MODULE_METADATA.EXPORTS, module),
