@@ -490,7 +490,7 @@ export class InstanceWrapper<T = any> {
     const { instance, isResolved, ...wrapperPartial } = metadata;
     /**为InstanceWrapper实例属性赋值 */
     Object.assign(this, wrapperPartial);
-
+    /** */
     this.setInstanceByContextId(STATIC_CONTEXT, {
       instance,
       isResolved,

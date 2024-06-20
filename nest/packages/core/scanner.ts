@@ -883,13 +883,23 @@ export class DependenciesScanner {
    * to all controllers metadata storage
    */
   public addScopedEnhancersMetadata() {
+    /**applicationProvidersApplyMap包含了应用中所有通过提供者方式注册的增强器 */
     iterate(this.applicationProvidersApplyMap)
+    /**筛选出作用域为请求或瞬态的增强器 */
       .filter(wrapper => this.isRequestOrTransient(wrapper.scope))
       .forEach(({ moduleKey, providerKey }) => {
+        /**获取存储所有模块的容器modules */
         const modulesContainer = this.container.getModules();
+        /**
+         * 根据模块token返回对应Module实例，并从实例中拿到_injectables集合，里面存放该模块下所有可注入依赖的
+         * 提供者和控制器
+         */
         const { injectables } = modulesContainer.get(moduleKey);
+        /**
+         * 根据providerKey拿到对应的提供者或控制器的实例包装器InstanceWraooer
+         */
         const instanceWrapper = injectables.get(providerKey);
-
+        /**再次遍历模块容器中的所有Module实例，将每个Module实例中的控制器包装器集合和入口提供者集合合并到一起 */
         const iterableIterator = modulesContainer.values();
         iterate(iterableIterator)
           .map(moduleRef =>
@@ -897,7 +907,11 @@ export class DependenciesScanner {
               moduleRef.entryProviders,
             ),
           )
-          .flatten()
+          .flatten() // 打平数组
+          /**再遍历数组成员，将providerKey对应的增强器包装实例添加到所有模块下的控制器和入口提供者的实例包装器的增强器
+           * 元数据集合中
+           * instanceWrapper[INSTANCE_METADATA_SYMBOL].enhancers
+           */
           .forEach(controllerOrEntryProvider =>
             controllerOrEntryProvider.addEnhancerMetadata(instanceWrapper),
           );
