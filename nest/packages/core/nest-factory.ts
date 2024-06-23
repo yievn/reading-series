@@ -237,12 +237,12 @@ export class NestFactoryStatic {
      * 如果为true，则为undefined，不过在ExceptionsZone会使用process.exit(1)结束进程
      */
     const teardown = this.abortOnError === false ? rethrow : undefined;
-
+    /**进行一些服务器的初始化，主要看httpServer有没有对init方法进行重写 */
     await httpServer?.init();
     try {
       /**打印日志，应用启动 */
       this.logger.log(MESSAGES.APPLICATION_START);
-
+      
       await ExceptionsZone.asyncRun(
         async () => {
           await dependenciesScanner.scan(module);
