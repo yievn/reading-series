@@ -119,10 +119,10 @@ export class DependenciesScanner {
     /**计算模块之间的距离，这有助于确定模块加载和初始化的顺序 */
     this.calculateModulesDistance();
     /**
-     * 
+     * 将应用中所有通过提供者方式注册的增强器添加到所有模块Module实例的增强器元数据集合中
      */
     this.addScopedEnhancersMetadata();
-    /**绑定全局作用域 */
+    /**将全局模块添加到模块容器中所有模块Module实例的_imports集合中 */
     this.container.bindGlobalScope();
   }
   /**
