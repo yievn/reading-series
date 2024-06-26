@@ -32,6 +32,7 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
   public async createInstancesOfDependencies(
     modules: Map<string, Module> = this.container.getModules(),
   ) {
+    /** */
     this.createPrototypes(modules);
 
     try {
@@ -43,9 +44,12 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
     }
     this.graphInspector.inspectModules(modules);
   }
-
+  /**用于为每个模块中的提供者、可注入项和kong晦气创建原型的关键步骤 */
   private createPrototypes(modules: Map<string, Module>) {
     modules.forEach(moduleRef => {
+      /**对于每个模块，调用以下方法，这个方法遍历模块中的所有提供者，并为每个提供者调用注入器的loadProtoType方法，它
+       * 负责创建提供者的原型，通常设计到解析提供者的构造函数和相关依赖，但不实例化提供者
+       */
       this.createPrototypesOfProviders(moduleRef);
       this.createPrototypesOfInjectables(moduleRef);
       this.createPrototypesOfControllers(moduleRef);
@@ -67,7 +71,9 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
   }
   /**为模块中的所有提供者创建原型 */
   private createPrototypesOfProviders(moduleRef: Module) {
+    /**获取该模块中的提供者集合 */
     const { providers } = moduleRef;
+    /**遍历提供者集合，调用注入器的loadPrototype */
     providers.forEach(wrapper =>
       this.injector.loadPrototype<Injectable>(wrapper, providers),
     );

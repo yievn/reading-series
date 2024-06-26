@@ -20,6 +20,7 @@ const STATIC_CONTEXT_ID = 1;
  * 场景：在注册和解析依赖项时，STATIC_CONTEXT作为一个标识，告诉依赖注入系统该依赖
  * 项应该在全局单例作用域中被管理
  * 
+ * 静态上下文，标识全局单例
 */
 export const STATIC_CONTEXT: ContextId = Object.freeze({
   id: STATIC_CONTEXT_ID,
