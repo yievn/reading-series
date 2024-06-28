@@ -99,7 +99,7 @@ export class InstanceWrapper<T = any> {
   public readonly host?: Module;
   /**标记此实例是否作为别名提供 */
   public readonly isAlias: boolean = false;
-  /**实例的子类型，用于进一步分类实例类型 */
+  /**实例的子类型，用于进一步分类实例类型， 因为当前包装器实例可能包装的是一个增强器 */
   public readonly subtype?: EnhancerSubtype;
   /**实例的作用域（如DEFAULT、REQUEST） */
   public scope?: Scope = Scope.DEFAULT;
@@ -118,6 +118,7 @@ export class InstanceWrapper<T = any> {
 
   private static logger: LoggerService = new Logger(InstanceWrapper.name);
 
+  /**存储上下文对象与其对应的metatype实例上下文对象 */
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
   /**存储了与实例相关的所有元数据，包括依赖、属性注入的元数据和增强器（拦截器和过滤器）。
    * 通过使用Symbol作为键，可以确保这个元数据存储不会与实例的其它属性冲突或被意外访问，从而提供了一种
@@ -129,13 +130,18 @@ export class InstanceWrapper<T = any> {
    * 管理的一致性和安全性。
    */
   private readonly [INSTANCE_ID_SYMBOL]: string;
-  /**transientMap是一个用于管理瞬态（TRANSIENT）作用域实例的数据结构
+  /**
+   * transientMap是一个用于管理瞬态（TRANSIENT）作用域实例的数据结构
    * 瞬态作用域意味着每次依赖注入时都会创建一个新的实例，而不是共享一个单例，这种作用域对于那些需要
    * 独立状态或多个实例的服务非常有用
+   * 
+   * 
    */
   private transientMap?:
     | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
     | undefined;
+
+
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
 
@@ -171,17 +177,50 @@ export class InstanceWrapper<T = any> {
   get isTransient(): boolean {
     return this.scope === Scope.TRANSIENT;
   }
-  /**根据上下文ID获取实例 */
+  /**
+   * 
+   * @param contextId 
+   * 
+   * 
+   * @param inquirerId 
+   * 
+   * 
+   * 
+   * @returns 返回上下文对应的实例
+   * @description 根据给定的ContextID获取服务实例
+   */
   public getInstanceByContextId(
     contextId: ContextId,
     inquirerId?: string,
   ): InstancePerContext<T> {
+    /**
+     * 首先检查服务的作用域。如果服务是瞬态作用域（Scope.TRANSIENT），
+     * 并且提供了 inquirerId，
+     * 则会调用 getInstanceByInquirerId 来获取或创建实例。
+     */
     if (this.scope === Scope.TRANSIENT && inquirerId) {
       return this.getInstanceByInquirerId(contextId, inquirerId);
     }
+    /**
+     * 如果服务不是瞬态作用域或没有提供 inquirerId，
+     * 方法会尝试从内部的 values 映射（通常是一个 WeakMap）中
+     * 获取与给定 ContextId 相关联的 InstancePerContext 对象。
+
+     */
     const instancePerContext = this.values.get(contextId);
+    /**
+     * 如果没有找到对应的 InstancePerContext 对象，
+     * 这通常意味着当前上下文中还没有为该服务创建实例。
+     * 此时，会调用 cloneStaticInstance 方法来创建一个新的实例。
+     */
     return instancePerContext
       ? instancePerContext
+      /**
+       * 处理服务实例未在当前上下文中找到。这个方法基于一个已存在的静态实例（通常
+       * 是在默认上下文或全局上下文中创建的实例）来创建一个新的上下文特定的实例。
+       * 这里的静态通常指的非请求作用域的实例，即在应用启动时创建的单例实例或者其他作用域
+       * 的默认实例。
+       */
       : this.cloneStaticInstance(contextId);
   }
 
@@ -199,7 +238,13 @@ export class InstanceWrapper<T = any> {
       ? instancePerContext
       : this.cloneTransientInstance(contextId, inquirerId);
   }
-
+  /**
+   * 
+   * @param contextId 用来标识某个特定上下文的对象
+   * @param value 存储某个特定上下文下创建的实例相关信息
+   * @param inquirerId 访问者标识符
+   * @returns 
+   */
   public setInstanceByContextId(
     contextId: ContextId,
     value: InstancePerContext<T>,
@@ -347,7 +392,7 @@ export class InstanceWrapper<T = any> {
     }
     return this.isTreeStatic;
   }
-
+  /**克隆静态实例 */
   public cloneStaticInstance(contextId: ContextId): InstancePerContext<T> {
     const staticInstance = this.getInstanceByContextId(STATIC_CONTEXT);
     if (this.isDependencyTreeStatic()) {
@@ -365,7 +410,7 @@ export class InstanceWrapper<T = any> {
     this.setInstanceByContextId(contextId, instancePerContext);
     return instancePerContext;
   }
-
+  /**克隆瞬态实例  */
   public cloneTransientInstance(
     contextId: ContextId,
     inquirerId: string,

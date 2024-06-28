@@ -248,7 +248,13 @@ export class Injector {
       inquirer,
     );
   }
-
+  /**
+   * 
+   * @param wrapper 
+   * @param moduleRef 
+   * @param contextId 
+   * @param inquirer 
+   */
   public async loadProvider(
     wrapper: InstanceWrapper<Injectable>,
     moduleRef: Module,
