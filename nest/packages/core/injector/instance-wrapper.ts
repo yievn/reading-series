@@ -70,6 +70,8 @@ export interface PropertyMetadata {
 }
 /**
  * 它作为一个容器，用于存储于一个实例相关搞得所有元数据，包括依赖、属性注入和增强器（如拦截器和过滤器）
+ * 
+ * 有关某个实例的元数据
  */
 interface InstanceMetadataStore {
   /**一个InstanceWrapper实例数组，存储实例的构造函数依赖 */
@@ -140,9 +142,14 @@ export class InstanceWrapper<T = any> {
   private transientMap?:
     | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
     | undefined;
-
-
+  /**用于判断当前实例的依赖树是否是静态的，在nest中，静态依赖树意味着一旦实例被创建，它将在应用的整个生命周期内保持
+   * 不变，这通常适用于单例作用域的服务。
+   */
   private isTreeStatic: boolean | undefined;
+  /**
+   * 用于判断当前实例的依赖树是否是持久的。持久性在这里指的是实例及其依赖是否能够跨越多个请求或上下文持续存在，通
+   * 常与请求作用于或瞬态作用域相关
+   */
   private isTreeDurable: boolean | undefined;
 
   constructor(
@@ -177,17 +184,21 @@ export class InstanceWrapper<T = any> {
   get isTransient(): boolean {
     return this.scope === Scope.TRANSIENT;
   }
+  
   /**
    * 
-   * @param contextId 
+   * @param contextId 上下文对象
+   * @param inquirerId 访问者标识符，如果传入，那么可以通过它获取实例
    * 
+   * inquirerId 的主要用途是在瞬态作用域中管理依赖实例。
+   * 在瞬态作用域下，每次依赖注入时都应该创建一个新的实例。
+   * 然而，如果一个服务被多个不同的组件依赖，
+   * 而这些组件又可能在同一个请求的上下文中多次请求该服务，
+   * 那么 inquirerId 就可以用来确保每个请求者获得其独立的服务实例。
    * 
-   * @param inquirerId 
-   * 
-   * 
-   * 
-   * @returns 返回上下文对应的实例
-   * @description 根据给定的ContextID获取服务实例
+   * 意思就是说，当前包装着实例中服务类被多个控制类所依赖时，如果没有inquirerId，那么多个控制类
+   * 访问到的可能是同一个服务类实例，而通过inquirerId，便可以获取独立的服务类实例
+   * @returns 
    */
   public getInstanceByContextId(
     contextId: ContextId,
@@ -228,12 +239,16 @@ export class InstanceWrapper<T = any> {
     contextId: ContextId,
     inquirerId: string,
   ): InstancePerContext<T> {
+    /**获取inquirerId对应的实例上下文集合 */
     let collectionPerContext = this.transientMap.get(inquirerId);
     if (!collectionPerContext) {
+      /**如果该inquirerId对应的映射表不存在，那么创建一个新的，并存到 transientMap映射中*/
       collectionPerContext = new WeakMap();
       this.transientMap.set(inquirerId, collectionPerContext);
     }
+    /**从对应的实例上下文集合合获取contextId对应的实例上下文对象 */
     const instancePerContext = collectionPerContext.get(contextId);
+    /**存在则直接返回获取到的实例上下文对象，不存在则 */
     return instancePerContext
       ? instancePerContext
       : this.cloneTransientInstance(contextId, inquirerId);
@@ -428,12 +443,18 @@ export class InstanceWrapper<T = any> {
     this.setInstanceByInquirerId(contextId, inquirerId, instancePerContext);
     return instancePerContext;
   }
-
+  /**
+   * 
+   * @param contextId 上下文对象，没有特殊指定的话默认为全局单例
+   * @returns 
+   */
   public createPrototype(contextId: ContextId) {
     const host = this.getInstanceByContextId(contextId);
+    /**如果metatype不能被构造或者isResolved为true(表示已被解析)，则直接返回 */
     if (!this.isNewable() || host.isResolved) {
       return;
     }
+    /**返回一个新对象，它的原型为metatype.prototype */
     return Object.create(this.metatype.prototype);
   }
 
@@ -526,6 +547,7 @@ export class InstanceWrapper<T = any> {
   }
 
   private isNewable(): boolean {
+    /**inject为null或undefined，metatype和metatype.prototype都存在，说明是一个构造函数 */
     return isNil(this.inject) && this.metatype && this.metatype.prototype;
   }
 

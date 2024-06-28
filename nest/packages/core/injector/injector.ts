@@ -104,13 +104,17 @@ export class Injector {
   /**加载并缓存给定令牌的圆形，这是为了优化性能，避免在每次请求时都重新创建实例 */
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
+    /**提供者、可注入项、控制器集合 */
     collection: Map<InjectionToken, InstanceWrapper<T>>,
+    /**没有单独传入时默认 创建的实例为全局单例 */
     contextId = STATIC_CONTEXT,
   ) {
     if (!collection) {
       return;
     }
+    /**从集合中获取到token对应的InstanceWrapper实例引用 */
     const target = collection.get(token);
+    /**调用InstanceWrapper中的createPrototype方法 */
     const instance = target.createPrototype(contextId);
     if (instance) {
       const wrapper = new InstanceWrapper({

@@ -242,7 +242,7 @@ export class NestFactoryStatic {
     try {
       /**打印日志，应用启动 */
       this.logger.log(MESSAGES.APPLICATION_START);
-      
+      /** */
       await ExceptionsZone.asyncRun(
         async () => {
           await dependenciesScanner.scan(module);
