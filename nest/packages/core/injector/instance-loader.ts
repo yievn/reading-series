@@ -30,12 +30,23 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
    * 进行错误处理和分析
    */
   public async createInstancesOfDependencies(
+    /**从容器中获取所有已注册的模块 */
     modules: Map<string, Module> = this.container.getModules(),
   ) {
-    /** */
+    /**
+     * 遍历每个模块中的所有提供者、控制器和可注入项，为他们
+     * 创建圆形，这一步不涉及实例化，而是为后续的实例化准备好原型对象。
+     * 通过预先创建原型，可以解析依赖关系并设置好构造函数和其他初始化需要的元数据，这有助于在实际创建实例
+     * 时能快速并准确地进行。
+    */
     this.createPrototypes(modules);
 
     try {
+      /**这一步根据前面创建的原型来创建实例。它涉及异步操作，因为实例化过程咋可能
+       * 需要执行异步任务（如数据库链接、文件读取等）
+       * 实例化所有的依赖项，确保每个模块的服务和控制器都已经准备好可以被使用。
+       * 这是依赖注入框架的核心功能，确保了应用的各个部分能够正确地协同工作。
+       */
       await this.createInstances(modules);
     } catch (err) {
       this.graphInspector.inspectModules(modules);
@@ -81,6 +92,7 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
   /**为模块中的所有提供者创建实例，并使用graphInspector检查每个实例 */
   private async createInstancesOfProviders(moduleRef: Module) {
     const { providers } = moduleRef;
+    /**获取到所有实例包装器 */
     const wrappers = [...providers.values()];
     await Promise.all(
       wrappers.map(async item => {
