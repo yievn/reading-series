@@ -6,16 +6,20 @@ export const isObject = (fn: any): fn is object =>
   !isNil(fn) && typeof fn === 'object';
 
 export const isPlainObject = (fn: any): fn is object => {
+  /**不是对象，直接false */
   if (!isObject(fn)) {
     return false;
   }
   const proto = Object.getPrototypeOf(fn);
+  /**原型为null，为false */
   if (proto === null) {
     return true;
   }
+  /**拿到对象实例原型上的构造对象引用 */
   const ctor =
     Object.prototype.hasOwnProperty.call(proto, 'constructor') &&
     proto.constructor;
+
   return (
     typeof ctor === 'function' &&
     ctor instanceof ctor &&
@@ -23,7 +27,7 @@ export const isPlainObject = (fn: any): fn is object => {
       Function.prototype.toString.call(Object)
   );
 };
-
+/**添加斜杆 */
 export const addLeadingSlash = (path?: string): string =>
   path && typeof path === 'string'
     ? path.charAt(0) !== '/'

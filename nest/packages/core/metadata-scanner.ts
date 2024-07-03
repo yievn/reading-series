@@ -32,19 +32,22 @@ export class MetadataScanner {
     if (!prototype) {
       return [];
     }
-
+    /** */
     const visitedNames = new Map<string, boolean>();
     const result: R[] = [];
 
     do {
+      /**遍历对象的自有属性 */
       for (const property of Object.getOwnPropertyNames(prototype)) {
+        /**如果遍历过，就直接跳过 */
         if (visitedNames.has(property)) {
           continue;
         }
-
+        /**标记属性，防止重复遍历 */
         visitedNames.set(property, true);
 
         // reason: https://github.com/nestjs/nest/pull/10821#issuecomment-1411916533
+        /**返回属性对应的描述符对象 */
         const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
 
         if (
@@ -53,6 +56,7 @@ export class MetadataScanner {
           isConstructor(property) ||
           !isFunction(prototype[property])
         ) {
+          /**如果是访问器属性、构造属性以及某属性不是方法，那就跳过 */
           continue;
         }
 

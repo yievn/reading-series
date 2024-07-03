@@ -24,6 +24,7 @@ export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 /**实例元数据ID键 */
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
 
+/**托管组件信息 */
 export interface HostComponentInfo {
   /**
    * Injection token (or class reference)
@@ -31,6 +32,7 @@ export interface HostComponentInfo {
   token: InjectionToken;
   /**
    * Flag that indicates whether DI subtree is durable
+   * 依赖注入子树是否持久
    */
   isTreeDurable: boolean;
 }
