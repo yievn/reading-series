@@ -59,8 +59,6 @@ import { MetadataScanner } from './metadata-scanner';
 /**
  * 用于封装与应用程序提供者相关的信息，这些提供者可能是全局拦截器、守卫、管道
  * 或过滤器等
- * 
- * 
  */
 interface ApplicationProviderWrapper {
   /**标识提供者所属的模块 */

@@ -179,6 +179,7 @@ export class InstanceWrapper<T = any> {
     return !this.metatype || this.isFactory;
   }
 
+  /**工厂函数类型 */
   get isFactory(): boolean {
     return this.metatype && !isNil(this.inject);
   }
@@ -218,7 +219,6 @@ export class InstanceWrapper<T = any> {
      * 如果服务不是瞬态作用域或没有提供 inquirerId，
      * 方法会尝试从内部的 values 映射（通常是一个 WeakMap）中
      * 获取与给定 ContextId 相关联的 InstancePerContext 对象。
-
      */
     const instancePerContext = this.values.get(contextId);
     /**

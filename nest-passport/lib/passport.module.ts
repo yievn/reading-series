@@ -6,8 +6,10 @@ import {
   IAuthModuleOptions
 } from './interfaces/auth-module.options';
 
+//
 @Module({})
 export class PassportModule {
+  /**注册动态模块 */
   static register(options: IAuthModuleOptions): DynamicModule {
     return {
       module: PassportModule,
@@ -15,6 +17,7 @@ export class PassportModule {
       exports: [AuthModuleOptions]
     };
   }
+  /**异步注册动态模块 */
   static registerAsync(options: AuthModuleAsyncOptions): DynamicModule {
     return {
       module: PassportModule,
@@ -23,10 +26,11 @@ export class PassportModule {
       exports: [AuthModuleOptions]
     };
   }
-
+  /**创建异步提供者 */
   private static createAsyncProviders(
     options: AuthModuleAsyncOptions
   ): Provider[] {
+    /**如果useExisting或者useFactory存在 */
     if (options.useExisting || options.useFactory) {
       return [this.createAsyncOptionsProvider(options)];
     }
@@ -42,6 +46,7 @@ export class PassportModule {
   private static createAsyncOptionsProvider(
     options: AuthModuleAsyncOptions
   ): Provider {
+    /**如果工厂函数属性存在，则返回工厂函数提供者 */
     if (options.useFactory) {
       return {
         provide: AuthModuleOptions,

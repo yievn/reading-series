@@ -5,6 +5,9 @@ import { Type } from '../interfaces';
  * 用于创建和配置Passport.js 策略的工厂函数。Passport.js 
  * 是一个流行的Nodejs认证中间件，它通过策略的
  * 概念来支持多种认证机制
+ * 
+ * 这个策略在实例化的时候会将指定的策略注册到passport中的策略集合中，例如，我们可以通过PassportStrategy工厂函数
+ * 传入passport的某个策略（LocalStrategy），然后
  */
 export function PassportStrategy<T extends Type<any> = any>(
   /**代表要继承的Passport策略。例如，如果你想使用Strategy的本地策略，你可以传递Strategy为passport-local的Strategy类 */
