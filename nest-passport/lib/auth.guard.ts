@@ -48,7 +48,6 @@ function createAuthGuard(type?: string | string[]): Type<IAuthGuard> {
 
     constructor(@Optional() options?: AuthModuleOptions) {
       this.options = options ?? this.options;
-      /**type为undefined并且options没有提供默认策略 */
       if (!type && !this.options.defaultStrategy) {
         authLogger.error(NO_STRATEGY_ERROR);
       }
@@ -56,15 +55,10 @@ function createAuthGuard(type?: string | string[]): Type<IAuthGuard> {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
       const options = {
-        /**
-         * session: false,
-         * property: 'user'
-         */
         ...defaultOptions,
         ...this.options,
         ...(await this.getAuthenticateOptions(context))
       };
-      /**获取请求响应对象 */
       const [request, response] = [
         this.getRequest(context),
         this.getResponse(context)
@@ -76,7 +70,6 @@ function createAuthGuard(type?: string | string[]): Type<IAuthGuard> {
         (err, user, info, status) =>
           this.handleRequest(err, user, info, context, status)
       );
-      /**将返回的user挂到request对象的指定属性上 */
       request[options.property || defaultOptions.property] = user;
       return true;
     }
@@ -99,14 +92,14 @@ function createAuthGuard(type?: string | string[]): Type<IAuthGuard> {
         )
       );
     }
-    /**处理请求 */
+
     handleRequest(err, user, info, context, status): TUser {
       if (err || !user) {
         throw err || new UnauthorizedException();
       }
       return user;
     }
-    
+
     getAuthenticateOptions(
       context: ExecutionContext
     ): Promise<IAuthModuleOptions> | IAuthModuleOptions | undefined {
