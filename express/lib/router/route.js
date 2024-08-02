@@ -6,17 +6,17 @@
  * MIT Licensed
  */
 
-'use strict';
+"use strict";
 
 /**
  * Module dependencies.
  * @private
  */
 
-var debug = require('debug')('express:router:route');
-var flatten = require('array-flatten');
-var Layer = require('./layer');
-var methods = require('methods');
+var debug = require("debug")("express:router:route");
+var flatten = require("array-flatten");
+var Layer = require("./layer");
+var methods = require("methods");
 
 /**
  * Module variables.
@@ -44,7 +44,7 @@ function Route(path) {
   this.path = path;
   this.stack = [];
 
-  debug('new %o', path)
+  debug("new %o", path);
 
   // route handlers for various http methods
   this.methods = {};
@@ -61,12 +61,10 @@ Route.prototype._handles_method = function _handles_method(method) {
   }
 
   // normalize name
-  var name = typeof method === 'string'
-    ? method.toLowerCase()
-    : method
+  var name = typeof method === "string" ? method.toLowerCase() : method;
 
-  if (name === 'head' && !this.methods['head']) {
-    name = 'get';
+  if (name === "head" && !this.methods["head"]) {
+    name = "get";
   }
 
   return Boolean(this.methods[name]);
@@ -82,7 +80,7 @@ Route.prototype._options = function _options() {
 
   // append automatic head
   if (this.methods.get && !this.methods.head) {
-    methods.push('head');
+    methods.push("head");
   }
 
   for (var i = 0; i < methods.length; i++) {
@@ -101,17 +99,17 @@ Route.prototype._options = function _options() {
 Route.prototype.dispatch = function dispatch(req, res, done) {
   var idx = 0;
   var stack = this.stack;
-  var sync = 0
-
+  var sync = 0;
+  /**栈为空，这结束当前分支的匹配，通过done将执行权交回上一级 */
   if (stack.length === 0) {
     return done();
   }
-  var method = typeof req.method === 'string'
-    ? req.method.toLowerCase()
-    : req.method
+  /**获取当前layer的method，用来做匹配 */
+  var method =
+    typeof req.method === "string" ? req.method.toLowerCase() : req.method;
 
-  if (method === 'head' && !this.methods['head']) {
-    method = 'get';
+  if (method === "head" && !this.methods["head"]) {
+    method = "get";
   }
 
   req.route = this;
@@ -119,37 +117,41 @@ Route.prototype.dispatch = function dispatch(req, res, done) {
   next();
 
   function next(err) {
-    // signal to exit route
-    if (err && err === 'route') {
+    // signal to exit route 退出当前route栈匹配
+    if (err && err === "route") {
       return done();
     }
 
-    // signal to exit router
-    if (err && err === 'router') {
-      return done(err)
+    // signal to exit router 退出当前所在的router栈匹配
+    if (err && err === "router") {
+      return done(err);
     }
 
-    // max sync stack
+    // max sync stack 最大同步堆栈
     if (++sync > 100) {
-      return setImmediate(next, err)
+      // 调用next时err会被传入
+      return setImmediate(next, err);
     }
-
-    var layer = stack[idx++]
+    /**取出索引对应的中间件层对象 */
+    var layer = stack[idx++];
 
     // end of layers
     if (!layer) {
-      return done(err)
+      return done(err);
     }
 
     if (layer.method && layer.method !== method) {
-      next(err)
+      /**请求方法不匹配，那么执行下一个 */
+      next(err);
     } else if (err) {
+      /**执行出现错误，那么 */
       layer.handle_error(err, req, res, next);
     } else {
+      /**请求方法匹配上了，那么执行被匹配中的layer中的请求处理函数 */
       layer.handle_request(req, res, next);
     }
 
-    sync = 0
+    sync = 0;
   }
 };
 
@@ -187,13 +189,13 @@ Route.prototype.all = function all() {
   for (var i = 0; i < handles.length; i++) {
     var handle = handles[i];
 
-    if (typeof handle !== 'function') {
+    if (typeof handle !== "function") {
       var type = toString.call(handle);
-      var msg = 'Route.all() requires a callback function but got a ' + type
+      var msg = "Route.all() requires a callback function but got a " + type;
       throw new TypeError(msg);
     }
 
-    var layer = Layer('/', {}, handle);
+    var layer = Layer("/", {}, handle);
     layer.method = undefined;
 
     this.methods._all = true;
@@ -203,22 +205,26 @@ Route.prototype.all = function all() {
   return this;
 };
 
-methods.forEach(function(method){
-  Route.prototype[method] = function(){
+methods.forEach(function (method) {
+  Route.prototype[method] = function () {
     var handles = flatten(slice.call(arguments));
 
     for (var i = 0; i < handles.length; i++) {
       var handle = handles[i];
 
-      if (typeof handle !== 'function') {
+      if (typeof handle !== "function") {
         var type = toString.call(handle);
-        var msg = 'Route.' + method + '() requires a callback function but got a ' + type
+        var msg =
+          "Route." +
+          method +
+          "() requires a callback function but got a " +
+          type;
         throw new Error(msg);
       }
 
-      debug('%s %o', method, this.path)
+      debug("%s %o", method, this.path);
 
-      var layer = Layer('/', {}, handle);
+      var layer = Layer("/", {}, handle);
       layer.method = method;
 
       this.methods[method] = true;

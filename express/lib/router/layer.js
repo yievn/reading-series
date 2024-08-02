@@ -6,15 +6,15 @@
  * MIT Licensed
  */
 
-'use strict';
+"use strict";
 
 /**
  * Module dependencies.
  * @private
  */
 
-var pathRegexp = require('path-to-regexp');
-var debug = require('debug')('express:router:layer');
+var pathRegexp = require("path-to-regexp");
+var debug = require("debug")("express:router:layer");
 
 /**
  * Module variables.
@@ -31,22 +31,23 @@ var hasOwnProperty = Object.prototype.hasOwnProperty;
 module.exports = Layer;
 
 function Layer(path, options, fn) {
+  // 将Layer当普通函数调用时，创建一个Layer实例并返回
   if (!(this instanceof Layer)) {
     return new Layer(path, options, fn);
   }
 
-  debug('new %o', path)
+  debug("new %o", path);
   var opts = options || {};
 
   this.handle = fn;
-  this.name = fn.name || '<anonymous>';
+  this.name = fn.name || "<anonymous>";
   this.params = undefined;
   this.path = undefined;
-  this.regexp = pathRegexp(path, this.keys = [], opts);
+  this.regexp = pathRegexp(path, (this.keys = []), opts);
 
   // set fast path flags
-  this.regexp.fast_star = path === '*'
-  this.regexp.fast_slash = path === '/' && opts.end === false
+  this.regexp.fast_star = path === "*";
+  this.regexp.fast_slash = path === "/" && opts.end === false;
 }
 
 /**
@@ -61,12 +62,20 @@ function Layer(path, options, fn) {
 
 Layer.prototype.handle_error = function handle_error(error, req, res, next) {
   var fn = this.handle;
-
+  /**
+   * 如果layer对象的处理函数没有四个参数，那说明没有附加错误处理程序，这个时候结束，匹配，将错误交给上层处理
+   *
+   * 例如：
+   *
+   * app.use(function(err, req, res, next){
+   *  if(err) ...
+   * })
+   */
   if (fn.length !== 4) {
     // not a standard error handler
     return next(error);
   }
-
+  /**如果处理函数包含错误参数，那么将错误交给处理程序，由处理程序决定如何处理错误 */
   try {
     fn(error, req, res, next);
   } catch (err) {
@@ -90,7 +99,7 @@ Layer.prototype.handle_request = function handle(req, res, next) {
     // not a standard request handler
     return next();
   }
-
+  // 执行请求处理函数
   try {
     fn(req, res, next);
   } catch (err) {
@@ -108,25 +117,25 @@ Layer.prototype.handle_request = function handle(req, res, next) {
  */
 
 Layer.prototype.match = function match(path) {
-  var match
+  var match;
 
   if (path != null) {
     // fast path non-ending match for / (any path matches)
     if (this.regexp.fast_slash) {
-      this.params = {}
-      this.path = ''
-      return true
+      this.params = {};
+      this.path = "";
+      return true;
     }
 
     // fast path for * (everything matched in a param)
     if (this.regexp.fast_star) {
-      this.params = {'0': decode_param(path)}
-      this.path = path
-      return true
+      this.params = { 0: decode_param(path) };
+      this.path = path;
+      return true;
     }
 
     // match the path
-    match = this.regexp.exec(path)
+    match = this.regexp.exec(path);
   }
 
   if (!match) {
@@ -137,7 +146,7 @@ Layer.prototype.match = function match(path) {
 
   // store values
   this.params = {};
-  this.path = match[0]
+  this.path = match[0];
 
   var keys = this.keys;
   var params = this.params;
@@ -145,9 +154,9 @@ Layer.prototype.match = function match(path) {
   for (var i = 1; i < match.length; i++) {
     var key = keys[i - 1];
     var prop = key.name;
-    var val = decode_param(match[i])
+    var val = decode_param(match[i]);
 
-    if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
+    if (val !== undefined || !hasOwnProperty.call(params, prop)) {
       params[prop] = val;
     }
   }
@@ -164,7 +173,7 @@ Layer.prototype.match = function match(path) {
  */
 
 function decode_param(val) {
-  if (typeof val !== 'string' || val.length === 0) {
+  if (typeof val !== "string" || val.length === 0) {
     return val;
   }
 
@@ -172,7 +181,7 @@ function decode_param(val) {
     return decodeURIComponent(val);
   } catch (err) {
     if (err instanceof URIError) {
-      err.message = 'Failed to decode param \'' + val + '\'';
+      err.message = "Failed to decode param '" + val + "'";
       err.status = err.statusCode = 400;
     }
 

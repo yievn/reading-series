@@ -362,11 +362,12 @@ module.exports = function authenticate(passport, name, options, callback) {
        *
        * Strategies should call this function to fail an authentication attempt.
        *
-       * @param {String} challenge challenge 参数通常用于提供有关失败原因的详细信息，或者用于向客户端发送特定的身份验证挑战信息。
+       * @param {String} challenge challenge 参数通常用于提供有关失败原因的详细信息，或者用于向客户端发送特定的身份验证失败信息。
        * @param {Number} status
        * @api public
        */
       strategy.fail = function (challenge, status) {
+        /**如果challenge为数字，那说明调用fail时是直接传状态码，一般来讲，challenge是一个字符串或对象 */
         if (typeof challenge == "number") {
           status = challenge;
           challenge = undefined;
@@ -415,6 +416,7 @@ module.exports = function authenticate(passport, name, options, callback) {
        * Under most circumstances, Strategies should not need to call this
        * function.  It exists primarily to allow previous authentication state
        * to be restored, for example from an HTTP session.
+       * 大部分情况下，策略都不需要调用这个函数，它的存在是为了允许之前的会话状态被恢复，比如，从HTTP会话
        *
        * @api public
        */
@@ -424,10 +426,12 @@ module.exports = function authenticate(passport, name, options, callback) {
 
       /**
        * Internal error while performing authentication.
+       * 执行验证时发生的内部错误
        *
        * Strategies should call this function when an internal error occurs
        * during the process of performing authentication; for example, if the
        * user directory is not available.
+       * 当执行验证期间发生错误时，应该调用strategy.error函数，例如，user信息不存在
        *
        * @param {Error} err
        * @api public
