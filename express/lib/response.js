@@ -63,11 +63,13 @@ var charsetRegExp = /;\s*charset\s*=/;
  * @return {ServerResponse}
  * @public
  */
-
+/**设置状态码 */
 res.status = function status(code) {
+  /**是字符串、非整数，并且大于99和小于1000 */
   if ((typeof code === 'string' || Math.floor(code) !== code) && code > 99 && code < 1000) {
     deprecate('res.status(' + JSON.stringify(code) + '): use res.status(' + Math.floor(code) + ') instead')
   }
+  /**设置状态码，继承自ServerResponse */
   this.statusCode = code;
   return this;
 };
@@ -85,6 +87,26 @@ res.status = function status(code) {
  * @param {Object} links
  * @return {ServerResponse}
  * @public
+ * 
+ * 请求头Link用于在HTTP消息中提供与当前资源相关的URI链接，它常用语提供元数据或
+ * 导航信息，特别是在restful Api 中，常见的使用场景包括分页、关联资源、只是相关
+ * 文档等。Link头的格式如下：
+ * 
+ * Link: <URI>; rel="relation-type"
+ * 
+ * 其中，<URI>是资源的链接，rel是链接关系类型，指示该链接的目的。常见的rel类型包括：
+ * 
+ * next：指向下一个页面的链接。
+ * prev：指向上一个页面的链接。
+ * self：指向当前资源的链接。
+ * first：指向第一页的链接。
+ * last：指向最后一页的链接。
+ * 
+ * 例如，在分页的场景中，服务器可能会在响应头中包含这样的Link头：
+ * Link: <https://api.example.com/resource?page=2>; rel="next", 
+ * <https://api.example.com/resource?page=10>; rel="last"
+ * 
+ * 这提供了关于如何导航到下一页和最后一页的信息
  */
 
 res.links = function(links){
@@ -103,6 +125,9 @@ res.links = function(links){
  *     res.send(Buffer.from('wahoo'));
  *     res.send({ some: 'json' });
  *     res.send('<p>some html</p>');
+ *     res.send(404)
+ *     res.send(404, 'hhhhh')
+ *     res.send('hhhh', 404)
  *
  * @param {string|number|boolean|object|Buffer} body
  * @public
@@ -114,23 +139,32 @@ res.send = function send(body) {
   var req = this.req;
   var type;
 
-  // settings
+  // settings 相当于express()放回的应用实例
   var app = this.app;
 
-  // allow status / body
+  // allow status / body 同时发送了数据和状态码，该用法已被弃用
   if (arguments.length === 2) {
     // res.send(body, status) backwards compat
     if (typeof arguments[0] !== 'number' && typeof arguments[1] === 'number') {
+      /**表示该用法被启用 */
       deprecate('res.send(body, status): Use res.status(status).send(body) instead');
       this.statusCode = arguments[1];
     } else {
+      /**到这里就是，第一个参数是数字，或者第一个是数字并且第二个不是数字，或者第一个不是数字并且第二个参数也不是数字， */
       deprecate('res.send(status, body): Use res.status(status).send(body) instead');
+      /**先这么认为，第一个参数是数字，那么第一个参数充当状态码，第二个参数充当数据chunk */
       this.statusCode = arguments[0];
       chunk = arguments[1];
     }
   }
 
-  // disambiguate res.send(status) and res.send(status, num)
+  // disambiguate res.send(status) and res.send(status, num) 消除两者歧义
+  /*如果chunk是数字，并且只有一个参数，那chunk就当做是状态码
+  
+  这个判断是为了处理只传入一个数字参数的特殊情况，这种情况下，Express将其视为发送一个
+  状态码的响应，并且将响应体设置为状态码的描述信息。
+  
+  */
   if (typeof chunk === 'number' && arguments.length === 1) {
     // res.send(status) will set status message as text string
     if (!this.get('Content-Type')) {
@@ -139,13 +173,19 @@ res.send = function send(body) {
 
     deprecate('res.send(status): Use res.sendStatus(status) instead');
     this.statusCode = chunk;
+    /**状态码描述信息，例如401的话，那对应就是"Unauthorized"*/
     chunk = statuses.message[chunk]
   }
 
   switch (typeof chunk) {
     // string defaulting to html
     case 'string':
+      /**响应头没有设置Content-Type */
       if (!this.get('Content-Type')) {
+        /**
+           * 通过type方法设置，找到html对应的mime类型，
+           * 并将之作为Content-Type设置到响应头中
+           */
         this.type('html');
       }
       break;
@@ -155,15 +195,26 @@ res.send = function send(body) {
       if (chunk === null) {
         chunk = '';
       } else if (Buffer.isBuffer(chunk)) {
+        /**响应头没有设置Content-Type */
         if (!this.get('Content-Type')) {
+          /**
+           * 通过type方法设置，找到bin对应的mime类型，
+           * 并将之作为Content-Type设置到响应头中
+           */
           this.type('bin');
         }
       } else {
+        /**
+         * 经过json，处理后（相当于JSON.stringify），
+         * 在json方法中会再次调用send方法
+         * 在匹配switch时，回匹配到string，但是因为在json方
+         * 法中设置了Content-Type，所以不用再设置Content-Type了
+         */
         return this.json(chunk);
       }
       break;
   }
-
+  /**到这里说明chunk是字符串，非字符串的上面已经用json处理响应的 */
   // write strings in utf-8
   if (typeof chunk === 'string') {
     encoding = 'utf8';
@@ -225,7 +276,7 @@ res.send = function send(body) {
   }
 
   if (req.method === 'HEAD') {
-    // skip body for HEAD
+    // skip body for HEAD 不传递响应体
     this.end();
   } else {
     // respond
@@ -617,7 +668,7 @@ res.download = function download (path, filename, options, callback) {
 
 res.contentType =
 res.type = function contentType(type) {
-  var ct = type.indexOf('/') === -1
+  var ct = type.indexOf('/') === -1 // 没有斜杆，说明通过类型字符串找到mime-type
     ? mime.lookup(type)
     : type;
 
@@ -771,6 +822,8 @@ res.append = function append(field, val) {
  * @param {String|Array} val
  * @return {ServerResponse} for chaining
  * @public
+ * 
+ * 
  */
 
 res.set =
@@ -806,6 +859,7 @@ res.header = function header(field, val) {
  * @param {String} field
  * @return {String}
  * @public
+ * 从响应头中获取指定键的值，getHeader是底层响应对象的方法
  */
 
 res.get = function(field){

@@ -16,6 +16,16 @@
 var Route = require("./route");
 var Layer = require("./layer");
 var methods = require("methods");
+/**
+ * function mixin(a, b){
+  if (a && b) {
+    for (var key in b) {
+      a[key] = b[key];
+    }
+  }
+  return a;
+}
+ */
 var mixin = require("utils-merge");
 var debug = require("debug")("express:router");
 var deprecate = require("depd")("express");
@@ -183,13 +193,13 @@ proto.handle = function handle(req, res, out) {
   function next(err) {
     var layerError = err === "route" ? null : err;
 
-    // remove added slash
+    // remove added slash 删除添加的斜杠
     if (slashAdded) {
       req.url = req.url.slice(1);
       slashAdded = false;
     }
 
-    // restore altered req.url
+    // restore altered req.url 恢复更改后的req.url
     if (removed.length !== 0) {
       req.baseUrl = parentUrl;
       req.url = protohost + removed + req.url.slice(protohost.length);
@@ -606,6 +616,7 @@ function matchLayer(layer, path) {
 
 // merge params with parent params
 function mergeParams(params, parent) {
+  /**没有parent，就直接返回params，不用合并了 */
   if (typeof parent !== "object" || !parent) {
     return params;
   }
