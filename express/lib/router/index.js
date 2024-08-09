@@ -59,12 +59,19 @@ var proto = (module.exports = function (options) {
 
   // mixin Router class functions
   setPrototypeOf(router, proto);
-
+  /**存储路径参数的处理函数，键是参数名，值是处理函数
+   *  router.params['userId'] = [function(req, res, next, value) { ... }];
+   */
   router.params = {};
+  /**存储全局参数处理函数，这些函数在所有路由参数处理之前执行 */
   router._params = [];
+  /**布尔值 指定路由是否区分大小写 */
   router.caseSensitive = opts.caseSensitive;
+  /**布尔值 指定是否将父路由的参数合并到子路由中 */
   router.mergeParams = opts.mergeParams;
+  /**布尔值 指定路由是否严格匹配路径末尾的斜杆 */
   router.strict = opts.strict;
+  /**存放layer实例 */
   router.stack = [];
 
   return router;
@@ -97,6 +104,8 @@ var proto = (module.exports = function (options) {
  *      next();
  *    });
  *  });
+ *
+ * 为指定的路由参数添加处理函数
  *
  * @param {String} name
  * @param {Function} fn
@@ -146,6 +155,7 @@ proto.param = function param(name, fn) {
 
 /**
  * Dispatch a req, res into the router.
+ * 分发请求到路由堆栈中的处理函数
  * @private
  */
 
@@ -208,6 +218,7 @@ proto.handle = function handle(req, res, out) {
 
     // signal to exit router
     if (layerError === "router") {
+      /**使用setImmediate可以避免递归调用导致的栈溢出 */
       setImmediate(done, null);
       return;
     }
@@ -241,19 +252,19 @@ proto.handle = function handle(req, res, out) {
       route = layer.route;
 
       if (typeof match !== "boolean") {
-        // hold on to layerError
+        // 不是boolean类型，那肯定是错误对象，说明匹配出错
         layerError = layerError || match;
       }
-      /**匹配不中，跳过，执行下一个匹配 */
+      /**match为false或者为错误对象，跳过，执行下一个匹配 */
       if (match !== true) {
         continue;
       }
-      /**匹配中了，但没有route，说明是使用app.use注册的中间件 */
+      /**匹配中了，但没有route，说明是使用use注册的中间件，而不是通过router[http_method]定义的路由层 */
       if (!route) {
         // process non-route handlers normally
         continue;
       }
-      //
+      // 即便当前layer匹配中了，但是之前匹配过程中有错误，也会跳到下一个，而不会继续往下执行，直到结束
       if (layerError) {
         // routes do not match with a pending error
         match = false;
@@ -268,23 +279,28 @@ proto.handle = function handle(req, res, out) {
         appendMethods(options, route._options());
       }
 
-      // don't even bother matching route
+      // don't even bother matching route 方法没匹配上
       if (!has_method && method !== "HEAD") {
         match = false;
       }
     }
 
-    // no match 到这里还没匹配到
+    // no match
+    /**
+     * 到这里还没匹配到或者说因为匹配中出错导致的，
+     * 因为上面只有匹配出现错误，就会一直continue，直到结束，所以在这里调用done结束匹配
+     */
     if (match !== true) {
       return done(layerError);
     }
 
     // store route for dispatch on change  有route，说明是通过app.get。。。等请求方法注册的中间件
     if (route) {
+      // 储存route以备变更时分发
       req.route = route;
     }
 
-    // Capture one-time layer values
+    // Capture one-time layer values 合并参数
     req.params = self.mergeParams
       ? mergeParams(layer.params, parentParams)
       : layer.params;
@@ -307,28 +323,42 @@ proto.handle = function handle(req, res, out) {
   function trim_prefix(layer, layerError, layerPath, path) {
     if (layerPath.length !== 0) {
       // Validate path is a prefix match
+      /**
+       * 检查当前层的路径是否是请求路径的前缀，不是的话，调用next(layerError)继续执行匹配，
+       * 在上一次匹配中时，idx会停留在匹配中的下一个层的索引位置，
+       * 所以调用next会继续执行下去，等待下一次匹配中或者到结束
+       */
       if (layerPath !== path.slice(0, layerPath.length)) {
         next(layerError);
         return;
       }
 
       // Validate path breaks on a path separator
+      /**
+       * 确保路径在匹配不分之后正确分隔，使用 /或. 不是的话调用next结束当前执行
+       */
       var c = path[layerPath.length];
       if (c && c !== "/" && c !== ".") return next(layerError);
 
       // Trim off the part of the url that matches the route
       // middleware (.use stuff) needs to have the path stripped
       debug("trim prefix (%s) from url %s", layerPath, req.url);
+      /**将layerPath给到removed，表示要从请求URL中移除与当前层路径匹配的部分。 */
       removed = layerPath;
+      /**更新req.url，只保留未匹配部分 */
       req.url = protohost + req.url.slice(protohost.length + removed.length);
 
-      // Ensure leading slash
+      // Ensure leading slash 如果移除前缀后的URL不以斜杠开始，添加一个前导斜杠
       if (!protohost && req.url[0] !== "/") {
         req.url = "/" + req.url;
         slashAdded = true;
       }
 
       // Setup base URL (no trailing slash)
+      /**
+       * 设置 req.baseUrl，反映当前的路由上下文
+       * 基础URL不包含尾部斜杠
+       */
       req.baseUrl =
         parentUrl +
         (removed[removed.length - 1] === "/"
@@ -348,6 +378,7 @@ proto.handle = function handle(req, res, out) {
 
 /**
  * Process any parameters for the layer.
+ * 处理路由层上的路径参数
  * @private
  */
 
@@ -357,7 +388,7 @@ proto.process_params = function process_params(layer, called, req, res, done) {
   // captured parameters from the layer, keys and values
   var keys = layer.keys;
 
-  // fast track
+  // fast track 如果没有在url上声明参数，/user/:id
   if (!keys || keys.length === 0) {
     return done();
   }
@@ -373,10 +404,11 @@ proto.process_params = function process_params(layer, called, req, res, done) {
   // process params in order
   // param callbacks can be async
   function param(err) {
+    // 出错了
     if (err) {
       return done(err);
     }
-
+    // 当前索引超出范围
     if (i >= keys.length) {
       return done();
     }
@@ -518,6 +550,7 @@ proto.use = function use(fn) {
  *
  * See the Route api documentation for details on adding handlers
  * and middleware to routes.
+ *
  *
  * @param {String} path
  * @return {Route}
