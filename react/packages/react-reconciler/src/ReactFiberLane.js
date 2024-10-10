@@ -35,13 +35,21 @@ import {clz32} from './clz32';
 
 // Lane values below should be kept in sync with getLabelForLane(), used by react-devtools-timeline.
 // If those values are changed that package should be rebuilt and redeployed.
-
+/**
+ * 表示可用的总车道数（lanes），在React的调度系统中，车道用于表示不同优先级的更新。
+ */
 export const TotalLanes = 31;
-
+/**
+ * 表示没有车道被占用 ，用于指示当前没有任何待处理的更新任务
+ */
 export const NoLanes: Lanes = /*                        */ 0b0000000000000000000000000000000;
+/**
+ * 表示没有特定的车道，指示当前没有特定的更新任务需要处理
+ */
 export const NoLane: Lane = /*                          */ 0b0000000000000000000000000000000;
 
 export const SyncHydrationLane: Lane = /*               */ 0b0000000000000000000000000000001;
+// 同步标志
 export const SyncLane: Lane = /*                        */ 0b0000000000000000000000000000010;
 export const SyncLaneIndex: number = 1;
 
@@ -144,7 +152,10 @@ export function getLabelForLane(lane: Lane): string | void {
     }
   }
 }
-
+/**
+ * 用于表示时间戳的一个特殊常量。它通常用于标识某个更新或任务没有设置具体的过期时间。
+作用和含义
+ */
 export const NoTimestamp = -1;
 
 let nextTransitionLane: Lane = TransitionLane1;

@@ -14,14 +14,20 @@
 // The Symbol used to tag the ReactElement-like types.
 /**用于标识React元素，也就是通过React.createElement或JSX创建的对象 */
 export const REACT_ELEMENT_TYPE: symbol = Symbol.for('react.element');
-/**用于标识React Portal，这是一种可以将子节点渲染到存在于父组件树之外的DOM
- * 节点的特殊类型的React元素。例如当需要将一个模态对话框、工具提示或下拉菜单渲染
+/**
+ * 对应于 ReactDOM.createPortal 创建的 Portal 组件，
+ * 用于将子节点渲染到父组件树之外的 DOM 节点。
+ * 例如当需要将一个模态对话框、工具提示或下拉菜单渲染
  * 到document.body上，而不是当前的组件树中
  */
 export const REACT_PORTAL_TYPE: symbol = Symbol.for('react.portal');
-/**用于标识React Fragment，这是一种可以返回多个子节点的组件 */
+/**
+ * 对应于 React.Fragment，用于返回多个子节点而不额外创建 DOM 元素
+ */
 export const REACT_FRAGMENT_TYPE: symbol = Symbol.for('react.fragment');
-/**用于标识React strictMode，这是一种可以检测潜在问题的组件*/
+/**
+ * 对应于 React.StrictMode，用于检测潜在问题的开发模式组件。
+*/
 export const REACT_STRICT_MODE_TYPE: symbol = Symbol.for('react.strict_mode');
 /**用于标识React Profiler组件，Profiler组件是一个用于测量React应用中组件渲染时间的特殊组件，
  * 可以用来发现应用中的性能瓶颈，当React遇到一个$$typeof属性为REACT_PROFILER_TYPE的对象
@@ -32,7 +38,9 @@ export const REACT_PROFILER_TYPE: symbol = Symbol.for('react.profiler');
  * 对象是一个Provider组件，并会对其进行特殊处理
  */
 export const REACT_PROVIDER_TYPE: symbol = Symbol.for('react.provider');
-/**用于标识Context Consumer，这是一种可以订阅context变化的组件 */
+/**
+ * 用于标识Context Consumer，这是一种可以订阅context变化的组件
+ */
 export const REACT_CONTEXT_TYPE: symbol = Symbol.for('react.context');
 /**
  * REACT_SERVER_CONTEXT_TYPE是一个特殊的Symbol，用于标识React的Server Context。
@@ -47,6 +55,11 @@ export const REACT_SERVER_CONTEXT_TYPE: symbol = Symbol.for(
 export const REACT_FORWARD_REF_TYPE: symbol = Symbol.for('react.forward_ref');
 /**用于标识React Suspense，这是一种可以“暂停”渲染，等待异步数据的组件。 */
 export const REACT_SUSPENSE_TYPE: symbol = Symbol.for('react.suspense');
+/**
+ * REACT_SUSPENSE_LIST_TYPE 是 React 中的一种特殊类型，
+ * 用于实现 SuspenseList 组件。SuspenseList 是
+ *  React 16.6 引入的一个实验性特性，旨在协调多个 Suspense 组件的渲染顺序。
+ */
 export const REACT_SUSPENSE_LIST_TYPE: symbol = Symbol.for(
   'react.suspense_list',
 );
@@ -55,21 +68,44 @@ export const REACT_MEMO_TYPE: symbol = Symbol.for('react.memo');
 /**用于标识React Lazy，这是一种可以延迟加载组件的组件。 */
 export const REACT_LAZY_TYPE: symbol = Symbol.for('react.lazy');
 
-export const REACT_SCOPE_TYPE: symbol = Symbol.for('react.scope');
 
+//--------------------------
+/**
+ * 用于标识 React 的 Scope API，主要用于实验性功能。-----
+ */
+export const REACT_SCOPE_TYPE: symbol = Symbol.for('react.scope');
+/**
+ * 用于标识调试追踪模式，主要在调试和性能分析中使用。
+ */
 export const REACT_DEBUG_TRACING_MODE_TYPE: symbol = Symbol.for(
   'react.debug_trace_mode',
 );
+/**
+ * 用于标识 Offscreen 组件，主要用于实验性功能，
+ * 允许组件在不影响布局的情况下保持挂载。----
+ */
 export const REACT_OFFSCREEN_TYPE: symbol = Symbol.for('react.offscreen');
-
+/**
+ * 用于标识 Legacy Hidden 组件，主要用于实验性功能。----
+ */
 export const REACT_LEGACY_HIDDEN_TYPE: symbol = Symbol.for(
   'react.legacy_hidden',
 );
+/**
+ * 用于标识 Cache 组件，主要用于实验性功能。----
+ */
 export const REACT_CACHE_TYPE: symbol = Symbol.for('react.cache');
 
+/**
+ * 用于标识 Tracing Marker，主要用于性能追踪。-----
+ */
 export const REACT_TRACING_MARKER_TYPE: symbol = Symbol.for(
   'react.tracing_marker',
 );
+
+
+// ---------------
+
 export const REACT_SERVER_CONTEXT_DEFAULT_VALUE_NOT_LOADED: symbol = Symbol.for(
   'react.default_value',
 );

@@ -7,6 +7,11 @@
 
 // List derived from Gecko source code:
 // https://github.com/mozilla/gecko-dev/blob/4e638efc71/layout/style/test/property_database.js
+/**
+ * shorthandToLonghand 是一个对象，映射了 CSS 
+ * 的简写属性到其对应的长属性列表。这个映射在处理 CSS 样式时非常有用，尤
+ * 其是在需要将简写属性展开为具体的长属性时。
+ */
 export const shorthandToLonghand = {
   animation: [
     'animationDelay',

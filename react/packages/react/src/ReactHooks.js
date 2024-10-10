@@ -37,6 +37,7 @@ function resolveDispatcher() {
   // Will result in a null access error if accessed outside render phase. We
   // intentionally don't throw our own error because this is in a hot path.
   // Also helps ensure this is inlined.
+  //先将dispatcher先断言为any类型，然后再断言为Di
   return ((dispatcher: any): Dispatcher);
 }
 

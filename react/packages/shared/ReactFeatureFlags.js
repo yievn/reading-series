@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict
+ * 
+ * 特性标志用于控制React的不同功能和实验性特性的启用和禁用。通过设置
+ * 这些标志，开发者可以在开发和生产环境中测试和控制不同的功能
  */
 
 // -----------------------------------------------------------------------------
@@ -12,7 +15,9 @@
 //
 // Flags that can likely be deleted or landed without consequences
 // -----------------------------------------------------------------------------
-
+/**
+ * 启用组件堆栈位置的标志，通常用于调试
+ */
 export const enableComponentStackLocations = true;
 
 // -----------------------------------------------------------------------------
@@ -30,20 +35,38 @@ export const enableComponentStackLocations = true;
 // -----------------------------------------------------------------------------
 
 // TODO: Finish rolling out in www
+/**
+ * 启用客户端渲染回退机制以处理文本不匹配。
+ */
 export const enableClientRenderFallbackOnTextMismatch = true;
+/**
+ * 启用表单操作功能。
+ */
 export const enableFormActions = true;
+/**
+ * 启用异步操作功能。
+ */
 export const enableAsyncActions = true;
 
 // Not sure if www still uses this. We don't have a replacement but whatever we
 // replace it with will likely be different than what's already there, so we
 // probably should just delete it as long as nothing in www relies on it.
+/**
+ * 启用调度器调试功能。
+ */
 export const enableSchedulerDebugging = false;
 
 // Need to remove didTimeout argument from Scheduler before landing
+/**
+ * 禁用调度器在工作循环中的超时。
+ */
 export const disableSchedulerTimeoutInWorkLoop = false;
 
 // This will break some internal tests at Meta so we need to gate this until
 // those can be fixed.
+/**
+ * 启用将根调度推迟到微任务的功能。
+ */
 export const enableDeferRootSchedulingToMicrotask = true;
 
 // -----------------------------------------------------------------------------
@@ -61,15 +84,28 @@ export const enableDeferRootSchedulingToMicrotask = true;
 // hydrated or deleted.
 //
 // This will eventually be replaced by the Transition Tracing proposal.
+/**
+ * 启用Suspense回调功能，用于跟踪和报告导致用户看到加载状态的原因。
+
+ */
 export const enableSuspenseCallback = false;
 
 // Experimental Scope support.
+/**
+ * 启用实验性的 Scope API
+ */
 export const enableScopeAPI = false;
 
 // Experimental Create Event Handle API.
+/**
+ * 启用实验性的创建事件句柄 API。
+ */
 export const enableCreateEventHandleAPI = false;
 
 // Support legacy Primer support on internal FB www
+/**
+ * 启用对内部 Facebook 的遗留支持。
+ */
 export const enableLegacyFBSupport = false;
 
 // -----------------------------------------------------------------------------
@@ -78,60 +114,123 @@ export const enableLegacyFBSupport = false;
 // These are features that we're either actively exploring or are reasonably
 // likely to include in an upcoming release.
 // -----------------------------------------------------------------------------
-
+/**
+ * 启用缓存功能。
+ */
 export const enableCache = true;
+/**
+ *  启用遗留缓存功能（实验性）。
+ */
 export const enableLegacyCache = __EXPERIMENTAL__;
+/**
+ * 启用缓存元素功能（实验性）。
+ */
 export const enableCacheElement = __EXPERIMENTAL__;
+/**
+ * 启用获取指令功能。
+ */
 export const enableFetchInstrumentation = true;
-
+/**
+ * 启用二进制传输功能（实验性）。
+ */
 export const enableBinaryFlight = __EXPERIMENTAL__;
-
+/**
+ * 启用污染检测功能（实验性）。
+ */
 export const enableTaint = __EXPERIMENTAL__;
-
+/**
+ * 启用推迟功能（实验性）。
+ */
 export const enablePostpone = __EXPERIMENTAL__;
-
+/**
+ * 启用过渡跟踪功能。
+ */
 export const enableTransitionTracing = false;
 
 // No known bugs, but needs performance testing
+/**
+ * 启用懒惰上下文传播功能。
+ */
 export const enableLazyContextPropagation = false;
 
 // FB-only usage. The new API has different semantics.
+/**
+ * 启用遗留隐藏功能。
+ */
 export const enableLegacyHidden = false;
 
 // Enables unstable_avoidThisFallback feature in Fiber
+/**
+ * 启用在 Fiber 中避免此回退的功能。
+ */
 export const enableSuspenseAvoidThisFallback = false;
 // Enables unstable_avoidThisFallback feature in Fizz
+/**
+ * 
+ */
 export const enableSuspenseAvoidThisFallbackFizz = false;
-
+/**
+ * 
+ */
 export const enableCPUSuspense = __EXPERIMENTAL__;
-
+/**
+ * 
+ */
 export const enableFloat = true;
 
 // Enables unstable_useMemoCache hook, intended as a compilation target for
 // auto-memoization.
+/**
+ * 
+ */
 export const enableUseMemoCacheHook = __EXPERIMENTAL__;
-
+/**
+ * 
+ */
 export const enableUseEffectEventHook = __EXPERIMENTAL__;
 
 // Test in www before enabling in open source.
 // Enables DOM-server to stream its instruction set as data-attributes
 // (handled with an MutationObserver) instead of inline-scripts
+/**
+ * 
+ */
 export const enableFizzExternalRuntime = true;
-
+/**
+ * 
+ */
 export const alwaysThrottleRetries = true;
-
+/**
+ * 
+ */
 export const useMicrotasksForSchedulingInFabric = false;
-
+/**
+ * 
+ */
 export const passChildrenWhenCloningPersistedNodes = false;
-
+/**
+ * 
+ */
 export const enableUseDeferredValueInitialArg = __EXPERIMENTAL__;
 
 /**
  * Enables an expiration time for retry lanes to avoid starvation.
  */
+/**
+ * 启用重试通道过期功能。
+ */
 export const enableRetryLaneExpiration = false;
+/**
+ * 重试通道的过期时间（毫秒）。
+ */
 export const retryLaneExpirationMs = 5000;
+/**
+ * 同步通道的过期时间（毫秒）。
+ */
 export const syncLaneExpirationMs = 250;
+/**
+ * 过渡通道的过期时间（毫秒）。
+ */
 export const transitionLaneExpirationMs = 5000;
 
 // -----------------------------------------------------------------------------
@@ -146,6 +245,7 @@ export const transitionLaneExpirationMs = 5000;
 // <StrictMode /> to gradually upgrade components.
 // If TRUE, trees rendered with createRoot will be StrictEffectsMode.
 // If FALSE, these trees will be StrictLegacyMode.
+// 默认启用严格效果模式。
 export const createRootStrictEffectsByDefault = false;
 
 export const disableModulePatternComponents = false;
@@ -155,11 +255,13 @@ export const disableLegacyContext = false;
 export const enableUseRefAccessWarning = false;
 
 // Enables time slicing for updates that aren't wrapped in startTransition.
+// 强制默认并发模式用于测试。
 export const forceConcurrentByDefaultForTesting = false;
 
 export const enableUnifiedSyncLane = true;
 
 // Adds an opt-in to time slicing for updates that aren't wrapped in startTransition.
+// 默认允许并发
 export const allowConcurrentByDefault = false;
 
 // -----------------------------------------------------------------------------
@@ -171,6 +273,7 @@ export const allowConcurrentByDefault = false;
 
 // Disable support for comment nodes as React DOM containers. Already disabled
 // in open source, but www codebase still relies on it. Need to remove.
+// 禁用将注释节点作为 DOM 容器。
 export const disableCommentsAsDOMContainers = true;
 
 // Disable javascript: URL strings in href for XSS protection.

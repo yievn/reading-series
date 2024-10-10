@@ -189,6 +189,32 @@ function extractEvents(
 }
 
 // List of events that need to be individually attached to media elements.
+/**
+abort: 触发在媒体加载被中止时。
+canplay: 触发在媒体可以开始播放时。
+canplaythrough: 触发在媒体可以无需缓冲地播放至结束时。
+durationchange: 触发在媒体的持续时间更改时。
+emptied: 触发在媒体资源为空时。
+encrypted: 触发在媒体需要解密时。
+ended: 触发在媒体播放结束时。
+error: 触发在媒体加载错误时。
+loadeddata: 触发在媒体的第一帧加载完成时。
+loadedmetadata: 触发在媒体的元数据加载完成时。
+loadstart: 触发在媒体开始加载时。
+pause: 触发在媒体暂停时。
+play: 触发在媒体开始播放时。
+playing: 触发在媒体开始播放后（在暂停或缓冲后）时。
+progress: 触发在媒体下载过程中。
+ratechange: 触发在媒体播放速率更改时。
+resize: 触发在元素大小更改时。
+seeked: 触发在媒体跳转完成时。
+seeking: 触发在媒体跳转开始时。
+stalled: 触发在媒体数据不可用时。
+suspend: 触发在媒体数据加载暂停时。
+timeupdate: 触发在媒体播放位置更改时。
+volumechange: 触发在媒体音量更改时。
+waiting: 触发在媒体需要缓冲时。
+ */
 export const mediaEventTypes: Array<DOMEventName> = [
   'abort',
   'canplay',
@@ -219,13 +245,24 @@ export const mediaEventTypes: Array<DOMEventName> = [
 // We should not delegate these events to the container, but rather
 // set them on the actual target element itself. This is primarily
 // because these events do not consistently bubble in the DOM.
+/**
+ * 用于标识那些不应该被委托到容器的事件集合，因为这些事件通常不在DOM中冒泡，因此需要直接在
+ * 目标元素上监听，而不是通过事件委托的方式在容器上监听。
+ */
 export const nonDelegatedEvents: Set<DOMEventName> = new Set([
+  //  触发在用户取消操作时，例如 <dialog> 元素的取消。
   'cancel',
+  //  触发在用户关闭对话框时。
   'close',
+  // 触发在表单元素验证失败时
   'invalid',
+  // 触发在资源加载完成时，例如 <img> 元素。
   'load',
+  // 触发在元素滚动时。
   'scroll',
+  // 触发在滚动操作结束时
   'scrollend',
+  // 触发在 <details> 元素的打开或关闭时。
   'toggle',
   // In order to reduce bytes, we insert the above array of media events
   // into this Set. Note: the "error" event isn't an exclusive media event,
@@ -392,20 +429,36 @@ export function listenToNativeEventForNonManagedEventTarget(
 }
 
 const listeningMarker = '_reactListening' + Math.random().toString(36).slice(2);
-
+/**
+ * 用于在指定的跟容器上注册所有支持的原生DOM事件的函数，它确保React能够监听并处理这些事件，
+ * 以便在组件中触发相应的事件处理程序
+ */
 export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
+  /**
+   * 使用 listeningMarker 属性来标记
+   *  rootContainerElement 是否已经注册过事件监听器，防止重复注册。
+   */
   if (!(rootContainerElement: any)[listeningMarker]) {
+    // 没有注册过事件监听器，在这里写上标记
     (rootContainerElement: any)[listeningMarker] = true;
+    /**
+     * 遍历 allNativeEvents，这是一个包含所有 React 支持的原生 DOM 事件的集合。
+     * 对于每个事件，调用 listenToNativeEvent 注册事件监听器。
+     */
     allNativeEvents.forEach(domEventName => {
       // We handle selectionchange separately because it
       // doesn't bubble and needs to be on the document.
+      // selectionchange 事件被单独处理，因为它不会冒泡，需要直接附加到 document 上。
       if (domEventName !== 'selectionchange') {
+        // 不应该被委托到容器的事件集合（也就是事件不会冒泡），如果事件不是其中的一种，那么注册事件的冒泡阶段监听器。
         if (!nonDelegatedEvents.has(domEventName)) {
           listenToNativeEvent(domEventName, false, rootContainerElement);
         }
+        // 注册事件的捕获阶段监听器。
         listenToNativeEvent(domEventName, true, rootContainerElement);
       }
     });
+    // selectionchange 事件被单独处理，因为它不会冒泡，需要直接附加到 document 上。
     const ownerDocument =
       (rootContainerElement: any).nodeType === DOCUMENT_NODE
         ? rootContainerElement
@@ -420,7 +473,14 @@ export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
     }
   }
 }
-
+/**
+ * 主要作用是为指定的DOM事件添加一个经过react处理的事件监听器
+ * @param {*} targetContainer 要添加事件监听器的目标容器（通常是DOM元素）
+ * @param {*} domEventName DOM事件名称（如click、keydown等）
+ * @param {*} eventSystemFlags react内部用于标识事件系统状态的标志
+ * @param {*} isCapturePhaseListener 指示是否为捕获阶段的监听器
+ * @param {*} isDeferredListenerForLegacyFBSupport 用于Facebook内部的遗留支持
+ */
 function addTrappedEventListener(
   targetContainer: EventTarget,
   domEventName: DOMEventName,
@@ -428,6 +488,7 @@ function addTrappedEventListener(
   isCapturePhaseListener: boolean,
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
+  /**创建一个优先级包装的事件监听器。允许react根据事件的重要性来调度事件处理 */
   let listener = createEventListenerWrapperWithPriority(
     targetContainer,
     domEventName,

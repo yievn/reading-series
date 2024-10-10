@@ -233,15 +233,19 @@ export function injectEventPluginOrder(
  *
  * @param {object} injectedNamesToPlugins Map from names to plugin modules.
  * @internal
+ * 
+ * 
  */
 export function injectEventPluginsByName(
   injectedNamesToPlugins: NamesToPlugins,
 ): void {
   let isOrderingDirty = false;
+
   for (const pluginName in injectedNamesToPlugins) {
     if (!injectedNamesToPlugins.hasOwnProperty(pluginName)) {
       continue;
     }
+    // 获取插件配置
     const pluginModule = injectedNamesToPlugins[pluginName];
     if (
       !namesToPlugins.hasOwnProperty(pluginName) ||
@@ -253,7 +257,7 @@ export function injectEventPluginsByName(
             `using the same name, \`${pluginName}\`.`,
         );
       }
-
+      
       namesToPlugins[pluginName] = pluginModule;
       isOrderingDirty = true;
     }

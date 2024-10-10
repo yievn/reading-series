@@ -136,19 +136,29 @@ if (__DEV__) {
   didWarnAboutFindNodeInStrictMode = ({}: {[string]: boolean});
 }
 
+/**
+ * 用于获取给定父组件的上下文（context），在React中，上下文是一种通过组件树
+ * 传递数据的方式
+ *
+ */
 function getContextForSubtree(
   parentComponent: ?React$Component<any, any>,
 ): Object {
+  // 如果没有提供父组件，返回一个空的上下文对象
   if (!parentComponent) {
     return emptyContextObject;
   }
-
+  // 使用 getInstance 函数获取与父组件关联的 Fiber 节点。
   const fiber = getInstance(parentComponent);
+  // 使用 findCurrentUnmaskedContext 函数获取当前未屏蔽的父上下文。
   const parentContext = findCurrentUnmaskedContext(fiber);
-
+  //  如果 Fiber 节点是一个类组件
   if (fiber.tag === ClassComponent) {
     const Component = fiber.type;
+    // 并且该组件是一个遗留的上下文提供者
     if (isLegacyContextProvider(Component)) {
+      //  使用 processChildContext 函数处理子上下文。
+
       return processChildContext(fiber, Component, parentContext);
     }
   }
@@ -317,24 +327,40 @@ export function createHydrationContainer(
 
   return root;
 }
-
+/**
+ * React内部用于更新容器的函数。它负责将新的React元素树渲染到指定的容器中。
+ * 这个函数在React的调和（reconciliation）过程中起到 关键作用。
+ * @param {*} element 要渲染的React元素树
+ * @param {*} container 容器的根节点，通常是FiberRoot
+ * @param {*} parentComponent 可选的父组件
+ * @param {*} callback 可选的回调函数，在渲染完成后调用。
+ * @returns 
+ */
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): Lane {
+  /**
+   * 在开发环境中，调用 onScheduleRoot 以便调试工具可以跟踪调度。
+   */
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
+  // 获取当前容器的 Fiber 节点。
   const current = container.current;
+  // 请求一个更新通道，用于调度更新
   const lane = requestUpdateLane(current);
-
+  // 如果启用了调度分析器，标记渲染已调度
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
-
+  // 获取子树的上下文
   const context = getContextForSubtree(parentComponent);
+  /**
+   * 如果容器没有上下文，设置当前上下文；否则，设置为待处理上下文。
+   */
   if (container.context === null) {
     container.context = context;
   } else {
@@ -357,15 +383,17 @@ export function updateContainer(
       );
     }
   }
-
+  // 创建一个新的更新对象。
   const update = createUpdate(lane);
   // Caution: React DevTools currently depends on this property
   // being called "element".
+  // 设置更新对象的负载payload为新的元素树。
   update.payload = {element};
 
   callback = callback === undefined ? null : callback;
   if (callback !== null) {
     if (__DEV__) {
+      // 检查回调是否为函数，并在开发环境中发出警告。
       if (typeof callback !== 'function') {
         console.error(
           'render(...): Expected the last optional `callback` argument to be a ' +
@@ -374,10 +402,12 @@ export function updateContainer(
         );
       }
     }
+    // 设置更新的回调。
     update.callback = callback;
   }
-
+  // 将更新入队
   const root = enqueueUpdate(current, update, lane);
+  // 如果有根节点，调度更新并处理过渡。
   if (root !== null) {
     scheduleUpdateOnFiber(root, current, lane);
     entangleTransitions(root, current, lane);
@@ -494,9 +524,15 @@ export {findHostInstance};
 
 export {findHostInstanceWithWarning};
 
+/**
+ * 该函数的主要作用是从给定的Fiber节点开始，向下查找并返回与之关联的宿主实例（例如DOM元素）。
+ * 宿主实例是React渲染树中实际的渲染目标。
+ */
 export function findHostInstanceWithNoPortals(
   fiber: Fiber,
 ): PublicInstance | null {
+  // 与 findHostInstance 不同，findHostInstanceWithNoPortals 会忽略通过 React Portal 渲染的子树。
+  // 这意味着如果一个组件通过 Portal 渲染到另一个 DOM 节点中，该函数不会返回该 Portal 的宿主实例。
   const hostFiber = findCurrentHostFiberWithNoPortals(fiber);
   if (hostFiber === null) {
     return null;

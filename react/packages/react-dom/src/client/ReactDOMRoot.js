@@ -107,17 +107,24 @@ ReactDOMHydrationRoot.prototype.render = ReactDOMRoot.prototype.render =
     }
 
     if (__DEV__) {
+      /**
+       * 在React早起的版本中，ReactDOM.render方法接受三个参数，第一个是reactNode，第二个是容器元素，第三个是渲染完成后的回调
+       * 
+       */
       if (typeof arguments[1] === 'function') {
+        // 警告已经不支持这么传递回调了
         console.error(
           'render(...): does not support the second callback argument. ' +
             'To execute a side effect after rendering, declare it in a component body with useEffect().',
         );
       } else if (isValidContainer(arguments[1])) {
+        // 警告容器参数不能这么传递
         console.error(
           'You passed a container to the second argument of root.render(...). ' +
             "You don't need to pass it again since you already passed it to create the root.",
         );
       } else if (typeof arguments[1] !== 'undefined') {
+        // 警告只能接受一个参数
         console.error(
           'You passed a second argument to root.render(...) but it only accepts ' +
             'one argument.',
@@ -159,6 +166,10 @@ ReactDOMHydrationRoot.prototype.unmount = ReactDOMRoot.prototype.unmount =
     }
   };
 
+/**
+ * createRoot是react18引入的一个新API，用于创建一个支持并发特性的根节点。它是
+ * react并发模式的核心部分，允许开发者利用react的新特性来提高应用的性能和用户体验。
+ */
 export function createRoot(
   container: Element | Document | DocumentFragment,
   options?: CreateRootOptions,
@@ -166,7 +177,7 @@ export function createRoot(
   if (!isValidContainer(container)) {
     throw new Error('createRoot(...): Target container is not a DOM element.');
   }
-
+  // 在开发模式下，如果container之前已经被React.render或createRoot使用过，会发出警告
   warnIfReactDOMContainerInDEV(container);
 
   let isStrictMode = false;
@@ -197,26 +208,37 @@ export function createRoot(
         }
       }
     }
+    // options.unstable_strictMode为true，则启用React的严格模式
     if (options.unstable_strictMode === true) {
       isStrictMode = true;
     }
+    // allowConcurrentByDefault和unstable_concurrentUpdatesByDefault都为true，那么则允许启用并发更新
     if (
       allowConcurrentByDefault &&
       options.unstable_concurrentUpdatesByDefault === true
     ) {
+      // 允许开发者在创建根节点时指定是否默认启用并发更新
       concurrentUpdatesByDefaultOverride = true;
     }
+    // 如果提供了标识符前缀
     if (options.identifierPrefix !== undefined) {
       identifierPrefix = options.identifierPrefix;
     }
+    // 如果提供了自定义错误处理程序，则设置他们
     if (options.onRecoverableError !== undefined) {
       onRecoverableError = options.onRecoverableError;
     }
+    // 如果提供了过度回调
     if (options.unstable_transitionCallbacks !== undefined) {
       transitionCallbacks = options.unstable_transitionCallbacks;
     }
   }
-
+/**
+ * 调用createContainer创建一个新的根容器，并使用指定的选项，这个函数是react协调器的一部分，
+ * 设置了渲染所需的内部数据结构
+ * 
+ * ConcurrentRoot表示使用并发渲染React根节点
+ */
   const root = createContainer(
     container,
     ConcurrentRoot,
@@ -227,9 +249,13 @@ export function createRoot(
     onRecoverableError,
     transitionCallbacks,
   );
+  // 将容器标记为根节点，root.curent为FiberNode节点
+  // 在dom节点中使用内部的随机key（internalContainerInstanceKey），存储了root.current这个FiberNode节点
   markContainerAsRoot(root.current, container);
+  // 将当前调度器设置为ReactDOMClientDispatcher，负责处理更新和渲染
   Dispatcher.current = ReactDOMClientDispatcher;
 
+  // 在根容器上设置事件监听器，如果container是一个注释节点，那么就是用它的父节点
   const rootContainerElement: Document | Element | DocumentFragment =
     container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)
@@ -237,6 +263,9 @@ export function createRoot(
   listenToAllSupportedEvents(rootContainerElement);
 
   // $FlowFixMe[invalid-constructor] Flow no longer supports calling new on functions
+  /**
+   * 返回一个新的 ReactDOMRoot 实例，提供 render 和 unmount 方法来管理 React 组件树。
+   */
   return new ReactDOMRoot(root);
 }
 
@@ -329,21 +358,25 @@ export function hydrateRoot(
   // $FlowFixMe[invalid-constructor] Flow no longer supports calling new on functions
   return new ReactDOMHydrationRoot(root);
 }
-
+// 确保传递给react渲染方法的容器是一个有效的DOM元素
 export function isValidContainer(node: any): boolean {
   return !!(
-    node &&
-    (node.nodeType === ELEMENT_NODE ||
-      node.nodeType === DOCUMENT_NODE ||
-      node.nodeType === DOCUMENT_FRAGMENT_NODE ||
-      (!disableCommentsAsDOMContainers &&
-        node.nodeType === COMMENT_NODE &&
-        (node: any).nodeValue === ' react-mount-point-unstable '))
+    node && // 存在node
+    (node.nodeType === ELEMENT_NODE || // node为一个标准DOM元素
+      node.nodeType === DOCUMENT_NODE || // node为文档节点
+      node.nodeType === DOCUMENT_FRAGMENT_NODE || // node为文档片段
+      (!disableCommentsAsDOMContainers && // 如果没有禁止注释元素作为DOM容器
+        node.nodeType === COMMENT_NODE && // 并且node为注释元素
+        (node: any).nodeValue === ' react-mount-point-unstable ')) // 并且node的nodeValue为react-mount-point-unstable
   );
 }
 
 // TODO: Remove this function which also includes comment nodes.
 // We only use it in places that are currently more relaxed.
+/**
+ * 用于验证DOM容器的一个函数，特别实在传统的渲染模式下（即react18之前的版本 ），它的作用于isValidContainer类似，但可能包含一些特定于
+ * 旧版的逻辑
+ */
 export function isValidContainerLegacy(node: any): boolean {
   return !!(
     node &&

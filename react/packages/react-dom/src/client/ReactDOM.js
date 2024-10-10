@@ -53,6 +53,10 @@ import {
   enqueueStateRestore,
   restoreStateIfNeeded,
 } from 'react-dom-bindings/src/events/ReactDOMControlledComponent';
+/**
+ * 通常包含React内部使用的一些共享数据和方法，这些内容不对外部开发者公开，主要用于
+ * React自身的视线和内部协调
+ */
 import Internals from '../ReactDOMSharedInternals';
 
 export {
@@ -166,6 +170,7 @@ function flushSync<R>(fn: (() => R) | void): R | void {
 }
 
 export {
+  // 
   createPortal,
   batchedUpdates as unstable_batchedUpdates,
   flushSync,
@@ -190,11 +195,31 @@ export {
 // Keep in sync with ReactTestUtils.js.
 // This is an array for better minification.
 Internals.Events = [
+  /**
+   * 在事件处理过程中，React需要从触发事件的DOM节点找到对应的React组件实例，以便正确地处理事件
+   */
   getInstanceFromNode,
+  /**
+   * 从React实例获取对应的DOM节点。在需要直接操作DOM的场景中，React需要从组件实例找到对应的DOM节点。
+   */
   getNodeFromInstance,
+  /**
+   * 从节点中获取fiber的当前属性。在事件处理过程中，React需要知道当前节点的属性，以便
+   * 正确地处理事件和更新状态。
+   */
   getFiberCurrentPropsFromNode,
+  /**
+   * 在事件处理处理过程中，某些组件的状态可能需要再事件处理后恢复，这个函数用于将这些组件
+   * 的状态加入恢复队列
+   */
   enqueueStateRestore,
+  /**
+   * 在事件处理完成后，React会调用这个函数来检查是否有组件的状态需要恢复，并执行恢复操作
+   */
   restoreStateIfNeeded,
+  /**
+   * 在事件处理过程中，React可以批量处理多个状态更新，以减少渲染次数，提高性能
+   */
   batchedUpdates,
 ];
 

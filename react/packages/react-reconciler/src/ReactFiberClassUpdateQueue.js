@@ -170,17 +170,34 @@ if (__DEV__) {
     currentlyProcessingQueue = null;
   };
 }
-
+/**
+ * initializeUpdateQueue 为给定的 Fiber 节点创建一个新的更新队列。
+ * 这是组件状态管理的基础步骤，确保每个组件都有一个独立的队列来管理其状态更新。
+ * 
+ * 函数会将 Fiber 节点的 memoizedState 
+ * 作为更新队列的 baseState，这表示组件的初始状态。
+ * 
+ * 更新队列用于存储待处理的更新任务。通过初始化更新队列，
+ * React 可以在组件生命周期中有效地管理和调度状态更新
+ * 
+ * 在并发模式下，更新队列支持异步更新和调度。
+ * 通过初始化更新队列，React 可以在不阻塞主线程的情况下处理状态更新。
+ * 
+ */
 export function initializeUpdateQueue<State>(fiber: Fiber): void {
   const queue: UpdateQueue<State> = {
+    // baseState 被初始化为 fiber.memoizedState，表示组件的初始状态。
     baseState: fiber.memoizedState,
+    // firstBaseUpdate 和 lastBaseUpdate 被初始化为 null，表示当前没有待处理的更新任务。
     firstBaseUpdate: null,
     lastBaseUpdate: null,
-    shared: {
+    // shared 对象用于存储共享的更新任务和相关信息，如 pending（待处理的更新任务）和 lanes（更新优先级）。
+    shared: { 
       pending: null,
       lanes: NoLanes,
       hiddenCallbacks: null,
     },
+    // callbacks 用于存储更新完成后的回调函数。
     callbacks: null,
   };
   fiber.updateQueue = queue;
@@ -204,33 +221,73 @@ export function cloneUpdateQueue<State>(
     workInProgress.updateQueue = clone;
   }
 }
+/**
+ * 用于创建更新对象，更新对象用于秒速组件状态或属性的变化
+ * 
+ * 更新对象包含了更新所需的信息，如优先级、更新类型、负载数据等。
+ * 在React更新机制中，每次状态或属性的变化都会生成一个更新对象，这些对象会被放入更新队列中，
+ * 等待被处理.
+ * 
 
+update 对象的用处
+状态更新: 在组件调用 setState 时，会创建一个更新对象，并将其放入组件的更新队列中。React 会在适当的时候处理这些更新，更新组件的状态。
+属性更新: 当组件的属性发生变化时，也会创建更新对象，以便 React 能够重新渲染组件。
+调和过程: 在调和过程中，React 会遍历更新队列，处理每个更新对象，并根据更新的类型和数据来更新组件树。
+优先级管理: 通过 lane 属性，React 可以根据更新的优先级来调度和处理更新，确保高优先级的更新能够及时响应。
+ */
 export function createUpdate(lane: Lane): Update<mixed> {
   const update: Update<mixed> = {
+    /**
+     * 表示更新的优先级。React 使用 "lanes" 来管理不同优先级的更新，
+     * 以便在调和过程中更好地调度和处理更新。
+     */
     lane,
-
+    /**
+     * 表示更新的类型。常见的更新类型包括 UpdateState、ReplaceState、ForceUpdate 等。
+     * 不同的更新类型会影响 React 如何处理更新。
+     */
     tag: UpdateState,
+    /**
+     * 存储更新的数据。对于状态更新，payload 通常是新的状态值或一个函数，用于计算新的状态。
+     */
     payload: null,
+    /**
+     * 更新完成后的回调函数。可以用于在更新完成后执行一些额外的操作。
+     */
     callback: null,
-
-    next: null,
+    /**
+     * 指向下一个更新对象的指针。更新对象通常被组织成一个链表，
+     * 以便在调和过程中依次处理。
+     */
+    next: null, 
   };
   return update;
 }
-
+/**
+ * 
+ * @param {*} fiber 需要更新的Fiber节点
+ * @param {*} update 要添加到队列的更新对象
+ * @param {*} lane 更新的优先级通道
+ * @returns 
+ */
 export function enqueueUpdate<State>(
   fiber: Fiber,
   update: Update<State>,
   lane: Lane,
 ): FiberRoot | null {
   const updateQueue = fiber.updateQueue;
+  /**从 Fiber 节点中获取更新队列。如果队列为 null，
+   * 表示该 Fiber 已被卸载，直接返回 null。*/
   if (updateQueue === null) {
     // Only occurs if the fiber has been unmounted.
     return null;
   }
-
+  // 获取共享队列
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
-
+  /**
+   * 在开发环境中，如果在更新函数内部调度了另一个更新，
+   * 发出警告，提示开发者更新函数应该是纯函数。
+   */
   if (__DEV__) {
     if (
       currentlyProcessingQueue === sharedQueue &&
@@ -247,15 +304,27 @@ export function enqueueUpdate<State>(
       didWarnUpdateInsideUpdate = true;
     }
   }
-
+  /**
+   * 如果检测到不安全的渲染阶段更新，直接将更新添加到队列中，
+   * 并创建一个循环列表以便立即处理。
+   * 
+   * 在渲染阶段，如果检测到不安全的更新，React 会将更新对象直接添加到更新队列中，
+   * 并创建一个循环列表。这意味着更新对象的 next 指针指向它自己。
+   * 通过这种方式，React 可以在当前渲染阶段立即处理这些更新，
+   * 而不必等待下一个渲染周期。
+   * 
+   * 
+   */
   if (isUnsafeClassRenderPhaseUpdate(fiber)) {
     // This is an unsafe render phase update. Add directly to the update
     // queue so we can process it immediately during the current render.
     const pending = sharedQueue.pending;
     if (pending === null) {
+      // pending为空，说明当前update是第一个更新对象，那么创建一个循环列表，也就是update.next指向它本身
       // This is the first update. Create a circular list.
       update.next = update;
     } else {
+      // 将update插入到pending的下一个
       update.next = pending.next;
       pending.next = update;
     }
@@ -267,6 +336,7 @@ export function enqueueUpdate<State>(
     // currently renderings (a pattern that is accompanied by a warning).
     return unsafe_markUpdateLaneFromFiberToRoot(fiber, lane);
   } else {
+    // 使用 enqueueConcurrentClassUpdate 函数处理并发类更新。
     return enqueueConcurrentClassUpdate(fiber, sharedQueue, update, lane);
   }
 }

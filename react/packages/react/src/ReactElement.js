@@ -563,6 +563,8 @@ export function cloneElement(element, config, children) {
  * @param {?object} object
  * @return {boolean} True if `object` is a ReactElement.
  * @final
+ * 
+ * 它通常用于验证一个对象是否是通过 React.createElement 或 JSX 创建的 React 元素。
  */
 export function isValidElement(object) {
   return (

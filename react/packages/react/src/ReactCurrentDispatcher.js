@@ -11,6 +11,8 @@ import type {Dispatcher} from 'react-reconciler/src/ReactInternalTypes';
 
 /**
  * Keeps track of the current dispatcher.
+ * 是react内部用来存储和管理当前dispatcher的对象。dispatcher包含了react hooks的具体实现
+
  */
 const ReactCurrentDispatcher = {
   current: (null: null | Dispatcher),

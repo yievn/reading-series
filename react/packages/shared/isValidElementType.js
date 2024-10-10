@@ -34,8 +34,14 @@ import {
 } from './ReactFeatureFlags';
 
 const REACT_CLIENT_REFERENCE: symbol = Symbol.for('react.client.reference');
-
+/**
+ * 用于判断一个值是否是有效的React元素类型。这个函数在React的渲染过程中被用来验证
+ * 传入的组件类型是否合法。
+ */
 export default function isValidElementType(type: mixed): boolean {
+  /**
+   * React支持原生HTML元素（如div、span）和函数组件，因此如果type是字符串或函数，直接返回true
+   */
   if (typeof type === 'string' || typeof type === 'function') {
     return true;
   }
@@ -44,10 +50,12 @@ export default function isValidElementType(type: mixed): boolean {
   if (
     type === REACT_FRAGMENT_TYPE ||
     type === REACT_PROFILER_TYPE ||
+    // REACT_DEBUG_TRACING_MODE_TYPE 只有在 enableDebugTracing 启用时才被认为是有效的类型。
     (enableDebugTracing && type === REACT_DEBUG_TRACING_MODE_TYPE) ||
     type === REACT_STRICT_MODE_TYPE ||
     type === REACT_SUSPENSE_TYPE ||
     type === REACT_SUSPENSE_LIST_TYPE ||
+    // REACT_LEGACY_HIDDEN_TYPE只有在enableLegacyHidden启用时才被认为是有效的类型
     (enableLegacyHidden && type === REACT_LEGACY_HIDDEN_TYPE) ||
     type === REACT_OFFSCREEN_TYPE ||
     (enableScopeAPI && type === REACT_SCOPE_TYPE) ||

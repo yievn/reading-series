@@ -132,6 +132,13 @@ if (__DEV__) {
   }
 }
 
+/**
+ * 1、表示组件的基本单元：FiberNode 是 React 中用于表示组件或元素的基本单元。
+ * 每个 FiberNode 实例代表一个 React 组件或元素。
+ * 2、管理组件状态和更新：它包含了与组件相关的状态、更新和渲染信息。
+ * 3、支持组件树的遍历和操作：通过 child、sibling 和 return 属性，
+ * FiberNode 支持组件树的遍历和操作。
+ */
 function FiberNode(
   this: $FlowFixMe,
   tag: WorkTag,
@@ -139,21 +146,39 @@ function FiberNode(
   key: null | string,
   mode: TypeOfMode,
 ) {
-  // Instance
-  /**表示节点类型的标记，例如FunctionComponent ClassComponent，具体可看 */
+  // Instance 基本属性
+  /**
+   * 用于标识不同类型的Fiber节点。每个Fiber节点代表一个React组件或元素，tag属性
+   * 帮助React确定如何处理和渲染该节点。
+   * 
+   * 常见的fiberNode tag类型有：
+   * 
+   * 1、FunctionComponent： 表示一个函数组件
+   * 2、ClassComponent： 表示一个类组件
+   * 3、HostRoot：表示应用的根节点，用于管理整个应用的状态和更新。
+   * 4、HostComponent：表示一个普通的 DOM 元素
+   * 5、HostText：表示一个文本节点。
+   * 6、Fragment：表示一个片段，用于处理和渲染多个子节点而不添加额外的 DOM 元素。
+   * 7、ContextProvider： 表示一个上下文提供者
+   * 8、ContextConsumer： 表示一个上下文消费者
+   * 9、ForwardRef：表示一个转发引用的组件
+   * 10、MemoComponent：表示一个记忆化的组件
+   * 11、SuspenseComponent： 表示一个 Suspense 组件
+   * 12、LazyComponent：表示一个懒加载组件。用于处理和渲染使用 React.lazy 创建的组件。
+  */
   this.tag = tag;
-  /**节点的唯一标识符，用于进行节点的diff和更新 */
+  /**节点的唯一标识符，用于在组件树的更新过程中进行节点的对比和复用。 */
   this.key = key;
-  /** 大部分情况与 type 相同，某些情况不同，比如 FunctionComponent 使用 React.memo 包裹，表示元素的类型*/
+  /** 表示元素的类型。通常与 type 相同，但在某些情况下（如 React.memo）可能不同。*/
   this.elementType = null;
   /**表示元素的类型， 对于 FunctionComponent，指函数本身，
    * 对于ClassComponent，指 class，对于 HostComponent，
    * 指 DOM 节点 tagName */
   this.type = null;
-  /**FiberNode 对应的真实 DOM 节点 */
+  /**FiberNode 对应的真实 DOM 节点或类组件实例。用于在渲染过程中访问和操作实际的 DOM 或组件实例。 */
   this.stateNode = null;
 
-  // Fiber
+  // Fiber 连接
   /**指向该 FiberNode 的父节点 */
   this.return = null;
   /**指向该 FiberNode 的第一个子节点 */
@@ -183,29 +208,74 @@ function FiberNode(
    *     return  return
    */
 
-  /**存储 FiberNode 的引用信息，与 React 的 Ref 有关 */
+  /**存储 FiberNode 的引用信息，与 React 的 Ref API 相关，用于访问 DOM 元素或组件实例。*/
   this.ref = null;
   /** */
   this.refCleanup = null;
+
+
+  // Props & State
+
   /**表示即将被应用到节点的 props 。当父组件发生更新时，会将新的 props 存储在 pendingProps 中，之后会被应用到节点。 */
   this.pendingProps = pendingProps;
+  /**
+   * 已应用到节点的 props。用于在渲染过程中访问当前的 props。
+   */
   this.memoizedProps = null;
+  /**
+   * 存储节点的更新队列。一个队列，包含了该Fiber上的状态更新和副作用
+   */
   this.updateQueue = null;
+  /**
+   * 已应用到节点的状态。用于在渲染过程中访问当前的状态。
+   */
   this.memoizedState = null;
+  /**
+   * 存储节点的依赖信息。用于管理和跟踪节点的上下文依赖。
+   */
   this.dependencies = null;
 
+
+  // 工作模式
+  /**
+   * 表示节点的模式。用于标识节点是否处于严格模式、并发模式等。
+   */
   this.mode = mode;
 
+
   // Effects
+  /**
+   * 存储节点的副作用标记。用于在提交阶段确定需要执行的操作（如插入、更新、删除）。
+   * 初始化 空标志位
+   * 描述该Fiber发生的副作用的标志（十六进制的标识）
+   */
   this.flags = NoFlags;
+  /**
+   * 存储子树的副作用标记。用于在提交阶段确定子树中需要执行的操作。
+   * 初始化 空标志位
+   * 描述该Fiber子树中发生的副作用的标志（十六进制的标识）
+   */
   this.subtreeFlags = NoFlags;
+  /**
+   * 存储需要删除的子节点。用于在提交阶段执行删除操作。
+   */
   this.deletions = null;
-
+  /**
+   * 存储节点的更新优先级。用于调度和管理节点的更新任务。
+   */
   this.lanes = NoLanes;
+  /**
+   * 存储子节点的更新优先级。用于调度和管理子节点的更新任务。
+   */
   this.childLanes = NoLanes;
-
+  /**
+   * 指向该 FiberNode 的备用（替补）节点。用于实现双缓冲技术，在更新过程中切换当前和备用节点。
+   * Current Tree和Work-in-progress (WIP) Tree的互相指向对方tree里的对应单元
+   */
   this.alternate = null;
 
+
+  // 如果启用了性能分析
   if (enableProfilerTimer) {
     // Note: The following is done to avoid a v8 performance cliff.
     //
@@ -232,7 +302,7 @@ function FiberNode(
     this.selfBaseDuration = 0;
     this.treeBaseDuration = 0;
   }
-
+  // 开发模式中
   if (__DEV__) {
     // This isn't directly used but is handy for debugging internals:
 
@@ -481,19 +551,32 @@ export function resetWorkInProgress(
   return workInProgress;
 }
 
+/**
+ * 创建一个根Fiber节点，该节点将作为整个应用的根节点。根Fiber节点是管理和调度应用状态和
+ * 更新的起点
+ */
 export function createHostRootFiber(
   tag: RootTag,
   isStrictMode: boolean,
   concurrentUpdatesByDefaultOverride: null | boolean,
 ): Fiber {
   let mode;
+  /**
+   * 根据传入的 tag 参数，函数首先确定根节点的渲染模式。
+   * 如果 tag 是 ConcurrentRoot，则启用 ConcurrentMode。
+   */
   if (tag === ConcurrentRoot) {
     mode = ConcurrentMode;
+    /**
+     * 
+     */
     if (isStrictMode === true || createRootStrictEffectsByDefault) {
+      // 通过按位或，除了启用ConcurrentMode外，还同时启用StrictLegacyMode和StrictEffectsMode
       mode |= StrictLegacyMode | StrictEffectsMode;
     }
     if (
       // We only use this flag for our repo tests to check both behaviors.
+      // 我们只在我们的回购测试中使用这个标志来检查这两种行为。
       forceConcurrentByDefaultForTesting
     ) {
       mode |= ConcurrentUpdatesByDefaultMode;
@@ -507,14 +590,18 @@ export function createHostRootFiber(
   } else {
     mode = NoMode;
   }
-
+  /**如果启用了 enableProfilerTimer 并且开发工具存在，
+   * 附加 ProfileMode，以便在开发工具中进行性能分析。 */
   if (enableProfilerTimer && isDevToolsPresent) {
     // Always collect profile timings when DevTools are present.
     // This enables DevTools to start capturing timing at any point–
     // Without some nodes in the tree having empty base times.
     mode |= ProfileMode;
   }
-
+  /**
+   * 使用 createFiber 函数创建一个新的 Fiber 节点，
+   * 类型为 HostRoot，并将确定的 mode 传递给它。
+   */
   return createFiber(HostRoot, null, null, mode);
 }
 

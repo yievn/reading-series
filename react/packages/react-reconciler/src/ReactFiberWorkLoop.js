@@ -302,6 +302,9 @@ type ExecutionContext = number;
 
 export const NoContext = /*             */ 0b000;
 const BatchedContext = /*               */ 0b001;
+/**
+ * 表示当前正在执行渲染操作
+ */
 export const RenderContext = /*         */ 0b010;
 export const CommitContext = /*         */ 0b100;
 
@@ -315,35 +318,107 @@ const RootCompleted = 5;
 const RootDidNotComplete = 6;
 
 // Describes where we are in the React execution stack
+// 描述我们在React执行堆栈中的位置
 let executionContext: ExecutionContext = NoContext;
 // The root we're working on
+/**
+ * 表示当前正在处理的 Fiber 树的根节点。
+ * 在调和过程中，React 会从根节点开始遍历和更新整个 Fiber 树。
+ * workInProgressRoot 用于跟踪当前正在处理的根节点，
+ * 以便在需要时中断和恢复渲染。
+ */
 let workInProgressRoot: FiberRoot | null = null;
 // The fiber we're working on
+/**
+ * 表示当前正在处理的 Fiber 节点。
+ * 在调和过程中，React 会逐个处理 Fiber 节点，更新其状态和子节点。
+ * workInProgress 用于跟踪当前正在处理的节点，以便在需要时进行更新和渲染。
+ */
 let workInProgress: Fiber | null = null;
 // The lanes we're rendering
+/**
+ * 表示当前正在渲染的通道（lanes）
+ * React 使用 "lanes" 来管理不同优先级的更新。
+ * workInProgressRootRenderLanes 用于跟踪当前渲染过程中涉及的通道，
+ * 以便在调和过程中正确地调度和处理更新。
+ */
 let workInProgressRootRenderLanes: Lanes = NoLanes;
 
+/**
+ * 是 React 内部用于表示 Fiber 节点挂起原因的类型。它帮助 React 在调和（reconciliation）过程中识别和处理不同的挂起情况。
+ */
 opaque type SuspendedReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+/**
+ * 表示 Fiber 节点没有挂起。在正常的渲染过程中，Fiber 节点没有遇到任何阻塞或挂起的情况。
+ */
 const NotSuspended: SuspendedReason = 0;
+/**
+ * 表示 Fiber 节点因错误而挂起。
+ * 当渲染过程中抛出错误时，React 会将 Fiber 节点标记为因错误挂起，以便进行错误边界处理。
+ */
 const SuspendedOnError: SuspendedReason = 1;
+/**
+ * 表示 Fiber 节点因数据加载而挂起。
+ * 当组件需要等待异步数据加载完成时，React 会将其标记为因数据挂起。
+ */
 const SuspendedOnData: SuspendedReason = 2;
+/**
+ * 表示 Fiber 节点因立即挂起。
+ * 这种情况通常用于需要立即暂停渲染的场景，可能是为了等待某些条件满足。
+ */
 const SuspendedOnImmediate: SuspendedReason = 3;
+/**
+ * 表示 Fiber 节点因实例挂起。
+ * 当组件实例需要等待某些操作完成时，可能会被标记为因实例挂起。
+ */
 const SuspendedOnInstance: SuspendedReason = 4;
+/**
+ * 表示 Fiber 节点因实例挂起，但已准备好继续。
+ * 当实例挂起的条件已经满足，组件可以继续渲染。
+ */
 const SuspendedOnInstanceAndReadyToContinue: SuspendedReason = 5;
+/**
+ * 表示 Fiber 节点因抛出 Promise 而挂起（已弃用）。
+ * 这种情况用于处理旧的 Promise 抛出模式，已在现代 React 中弃用。
+ */
 const SuspendedOnDeprecatedThrowPromise: SuspendedReason = 6;
+/**
+ * 表示 Fiber 节点挂起，但已准备好继续。
+ * 当挂起的条件已经满足，组件可以继续渲染。
+ */
 const SuspendedAndReadyToContinue: SuspendedReason = 7;
+/**
+ * 表示 Fiber 节点因水合（hydration）而挂起。
+ * 在服务端渲染的应用中，组件可能需要等待水合过程完成。
+ */
 const SuspendedOnHydration: SuspendedReason = 8;
 
 // When this is true, the work-in-progress fiber just suspended (or errored) and
 // we've yet to unwind the stack. In some cases, we may yield to the main thread
 // after this happens. If the fiber is pinged before we resume, we can retry
 // immediately instead of unwinding the stack.
+/**
+ * 表示当前 workInProgress 节点挂起的原因。
+ * 在调和过程中，如果某个节点因某种原因（如数据加载或错误）挂起，
+ * workInProgressSuspendedReason 用于记录挂起的原因，
+ * 以便在恢复渲染时进行处理。
+ */
 let workInProgressSuspendedReason: SuspendedReason = NotSuspended;
+/**
+ * 存储在渲染过程中抛出的错误或异常值。
+ * 当渲染过程中抛出错误时，workInProgressThrownValue 
+ * 用于存储该错误，以便在错误边界中进行处理。
+ */
 let workInProgressThrownValue: mixed = null;
 
 // Whether a ping listener was attached during this render. This is slightly
 // different that whether something suspended, because we don't add multiple
 // listeners to a promise we've already seen (per root and lane).
+/**
+ * 表示在当前渲染过程中是否附加了 ping 监听器。
+ * 处理异步数据加载时，React 可能会附加 ping 监听器，
+ * 以便在数据加载完成时重新调度渲染。workInProgressRootDidAttachPingListener 用于跟踪是否已附加监听器。
+ */
 let workInProgressRootDidAttachPingListener: boolean = false;
 
 // A contextual version of workInProgressRootRenderLanes. It is a superset of
@@ -354,28 +429,68 @@ let workInProgressRootDidAttachPingListener: boolean = false;
 //
 // Most things in the work loop should deal with workInProgressRootRenderLanes.
 // Most things in begin/complete phases should deal with entangledRenderLanes.
+/**
+ * 表示当前渲染过程中与 workInProgressRootRenderLanes 相关联的通道（lanes）。
+ */
 export let entangledRenderLanes: Lanes = NoLanes;
 
 // Whether to root completed, errored, suspended, etc.
+/**
+ * 表示当前 workInProgressRoot 的退出状态。
+ * 用于跟踪根节点在渲染过程中的状态，如是否完成、挂起、错误等。
+ * 它帮助 React 在渲染完成后决定下一步的操作。
+ */
 let workInProgressRootExitStatus: RootExitStatus = RootInProgress;
 // A fatal error, if one is thrown
+/**
+ * 存储在渲染过程中抛出的致命错误。
+ * 当渲染过程中抛出无法恢复的错误时，workInProgressRootFatalError 用于存储该错误，以便在渲染完成后进行处理。
+ */
 let workInProgressRootFatalError: mixed = null;
 // The work left over by components that were visited during this render. Only
 // includes unprocessed updates, not work in bailed out children.
+/**
+ * 表示在当前渲染过程中被跳过的通道（lanes）。
+ * 用于跟踪在渲染过程中未处理的更新，以便在后续渲染中进行处理。
+ */
 let workInProgressRootSkippedLanes: Lanes = NoLanes;
 // Lanes that were updated (in an interleaved event) during this render.
+/**
+ * 表示在当前渲染过程中（非渲染阶段事件中）更新的通道（lanes）。
+ * 用于跟踪在渲染过程中发生的交错更新，以便在后续渲染中进行处理。
+ */
 let workInProgressRootInterleavedUpdatedLanes: Lanes = NoLanes;
 // Lanes that were updated during the render phase (*not* an interleaved event).
+/**
+ * 表示在渲染阶段（非交错事件中）更新的通道（lanes）。
+ * 用于跟踪在渲染阶段发生的更新，以便在后续渲染中进行处理。
+ */
 let workInProgressRootRenderPhaseUpdatedLanes: Lanes = NoLanes;
 // Lanes that were pinged (in an interleaved event) during this render.
+/**
+ * 表示在当前渲染过程中被 ping 的通道（lanes）。
+ * 用于跟踪在渲染过程中被 ping 的更新，以便在后续渲染中进行处理。
+ */
 let workInProgressRootPingedLanes: Lanes = NoLanes;
 // If this lane scheduled deferred work, this is the lane of the deferred task.
+/**
+ * 如果某个通道调度了延迟工作，这是延迟任务的通道。
+ * 用于跟踪在渲染过程中被延迟的更新，以便在后续渲染中进行处理
+ */
 let workInProgressDeferredLane: Lane = NoLane;
 // Errors that are thrown during the render phase.
+/**
+ * 存储在渲染阶段抛出的错误。
+ * 用于跟踪在渲染过程中抛出的错误，以便在错误边界中进行处理。
+ */
 let workInProgressRootConcurrentErrors: Array<CapturedValue<mixed>> | null =
   null;
 // These are errors that we recovered from without surfacing them to the UI.
 // We will log them once the tree commits.
+/**
+ * 存储在渲染过程中恢复的错误。
+ * 用于跟踪在渲染过程中恢复的错误，以便在渲染完成后进行日志记录。
+ */
 let workInProgressRootRecoverableErrors: Array<CapturedValue<mixed>> | null =
   null;
 
@@ -613,7 +728,9 @@ export function getCurrentTime(): number {
 
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
+  // 获取Fiber的mode属性
   const mode = fiber.mode;
+  // 如果不是并发渲染模式，返回同步标志
   if ((mode & ConcurrentMode) === NoMode) {
     return (SyncLane: Lane);
   } else if (
@@ -716,18 +833,26 @@ export function requestDeferredLane(): Lane {
   }
   return workInProgressDeferredLane;
 }
-
+/**
+ * react内部用于调度Fiber节点更新的函数，它负责将更新对象添加到更新队列中，并确保更新
+ * 能够被正确地调度和处理
+ */
 export function scheduleUpdateOnFiber(
   root: FiberRoot,
   fiber: Fiber,
   lane: Lane,
 ) {
+  /**
+   * 在开发环境中，检查是否在 useInsertionEffect 中调度更新，并发出警告。
+   */
   if (__DEV__) {
     if (isRunningInsertionEffect) {
       console.error('useInsertionEffect must not schedule updates.');
     }
   }
-
+  /**
+   * 在开发环境中，检查是否在被动效果（useEffect）中调度更新，并记录状态。
+   */
   if (__DEV__) {
     if (isFlushingPassiveEffects) {
       didScheduleUpdateDuringPassiveEffects = true;
@@ -736,6 +861,13 @@ export function scheduleUpdateOnFiber(
 
   // Check if the work loop is currently suspended and waiting for data to
   // finish loading.
+  /**
+   * root === workInProgressRoot 检查当前根节点是否是正在进行工作的根节点。
+   * workInProgressSuspendedReason === SuspendedOnData 检查挂起的原因是否是因为数据（例如，异步数据加载）
+   * root.cancelPendingCommit !== null 检查是否有挂起的提交操作。这意味着在提交阶段被挂起，可能是因为某些异步操作未完成。
+   * 
+   * 如果当前根节点正在进行渲染并且因为数据加载而被挂起，或者当前节点正处于提交阶段
+   */
   if (
     // Suspended render phase
     (root === workInProgressRoot &&
@@ -745,7 +877,19 @@ export function scheduleUpdateOnFiber(
   ) {
     // The incoming update might unblock the current render. Interrupt the
     // current attempt and restart from the top.
+    /**
+     *  由于新的更新可能会解除当前的挂起状态，React 选择中断当前的渲染或提交过程。
+     */
+    /**
+     * 准备一个新的渲染堆栈。这意味着清除当前的工作进度，以便从头开始重新渲染。
+     * NoLanes 表示没有特定的更新通道，意味着清除所有挂起的工作。
+     */
     prepareFreshStack(root, NoLanes);
+    /**
+     * 标记根节点为挂起状态。
+     * workInProgressRootRenderLanes 和 workInProgressDeferredLane 用于跟踪当前渲染和延迟的通道。
+     * 这一步确保在重新开始渲染时，React 知道哪些通道是挂起的，并可以正确地处理它们。
+     */
     markRootSuspended(
       root,
       workInProgressRootRenderLanes,
@@ -839,6 +983,7 @@ export function scheduleUpdateOnFiber(
     }
 
     ensureRootIsScheduled(root);
+    // 
     if (
       lane === SyncLane &&
       executionContext === NoContext &&
@@ -874,10 +1019,18 @@ export function scheduleInitialHydrationOnRoot(root: FiberRoot, lane: Lane) {
   markRootUpdated(root, lane);
   ensureRootIsScheduled(root);
 }
-
+/**
+ * 用于检测在类组件的渲染阶段是否发生了不安全的更新，在React中，
+ * 渲染阶段应该是纯函数，不应该有副作用，然而，有时开发者可能会在渲染
+ * 阶段调用setState或其他更新方法，这会导致不安全的更新
+ */
 export function isUnsafeClassRenderPhaseUpdate(fiber: Fiber): boolean {
   // Check if this is a render phase update. Only called by class components,
   // which special (deprecated) behavior for UNSAFE_componentWillReceive props.
+  /**
+   * executionContext 是一个位掩码，用于表示当前的执行上下文。RenderContext 表示渲染阶段的上下文。
+   * 如果当前上下文包含 RenderContext，则返回 true，表示这是一个不安全的渲染阶段更新。
+   */
   return (executionContext & RenderContext) !== NoContext;
 }
 

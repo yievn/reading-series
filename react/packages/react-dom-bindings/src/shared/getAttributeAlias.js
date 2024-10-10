@@ -5,6 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow
+ * 
+ * aliases是一个Mac对象，用于存储HTML和svg属性的别名，这些别名主要用于React属性名转换
+ * 为标准的DOM属性名，以确保在渲染时生成正确地HTML或SVG元素。
+ * 
+ * React使用驼峰命名法来定义属性名（例如，htmlFor和className），而HTML和SVG通常
+ * 使用连字符命名法（例如，for和class）。aliases提供了一种机制，将React的属性名转换
+ * 为标准的DOM属性名。
+ * 
+ * 某些属性在HTML和SVG中具有不同的命名规则或大小写敏感性。aliases通过提供
+ * 正确地属性名，确保在不同的上下文中渲染时的兼容性。
  */
 
 const aliases = new Map([
