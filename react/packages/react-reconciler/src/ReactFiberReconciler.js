@@ -350,7 +350,7 @@ export function updateContainer(
   }
   // 获取当前容器的 Fiber 节点。
   const current = container.current;
-  // 请求一个更新通道，用于调度更新
+  // 获取一个有限就
   const lane = requestUpdateLane(current);
   // 如果启用了调度分析器，标记渲染已调度
   if (enableSchedulingProfiler) {
@@ -407,10 +407,16 @@ export function updateContainer(
   }
   // 将更新入队
   const root = enqueueUpdate(current, update, lane);
-  // 如果有根节点，调度更新并处理过渡。
-  if (root !== null) {
+  /**
+   * 这行代码检查 root 是否不为 null。root 通常是指向 Fiber 
+   * 树的根节点的引用。在 React 中，每个渲染树都有一个根节点，
+   * 代表整个应用或组件树的起点。
+   * 
+   * 只有在 root 存在的情况下，才会继续执行更新调度的逻辑。
+   */
+  if (root !== null) {  
     scheduleUpdateOnFiber(root, current, lane);
-    entangleTransitions(root, current, lane);
+    entangleTransitions(root,   current, lane);
   }
 
   return lane;

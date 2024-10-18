@@ -113,7 +113,16 @@ const discreteReplayableEvents: Array<DOMEventName> = [
   'reset',
   // 'submit', // stopPropagation blocks the replay mechanism
 ];
-
+/***
+ * 这个函数用于检查给定的DOM事件名称是否是需要同步处理的离散事件。
+ * 离散事件是指那些需要快速响应的事件，如点击、按键等，这些事件通常需要
+ * 在事件发生时立即处理，以确保用户交互的流畅性。
+ * 
+ * isDiscreteEventThatRequiresHydration 函数会根据 domEventName 
+ * 判断事件是否需要“hydration”。在 React 中，“hydration” 
+ * 是指在服务器端渲染的内容上附加事件处理程序的过程。
+ * 对于某些离散事件，可能需要在捕获阶段进行同步处理，以确保事件处理的及时性。
+ */
 export function isDiscreteEventThatRequiresHydration(
   eventType: DOMEventName,
 ): boolean {

@@ -580,7 +580,7 @@ export function getCurrentEventPriority(): EventPriority {
     return DefaultEventPriority;
   }
   return getEventPriority(currentEvent.type);
-}
+}    
 
 let currentPopstateTransitionEvent: Event | null = null;
 export function shouldAttemptEagerTransition(): boolean {

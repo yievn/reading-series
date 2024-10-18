@@ -75,7 +75,7 @@ function FiberRootNode(
    */
   this.tag = tag;
   /**
-   * 存储React应用挂载的DOM容器信息。用于在渲染过程中访问和操作DOM
+   * 存储React应用挂载的DOM容器元素。用于在渲染过程中访问和操作DOM
    */
   this.containerInfo = containerInfo;
   /**
@@ -100,6 +100,7 @@ function FiberRootNode(
   this.timeoutHandle = noTimeout;
   /**
    * 存储挂起提交的函数。用于在需要时取消挂起的提交操作
+   * 取消待处理的提交
    */
   this.cancelPendingCommit = null;
   /**
@@ -200,13 +201,13 @@ function FiberRootNode(
       pendingUpdatersLaneMap.push(new Set());
     }
   }
-
+  // 开发环境下
   if (__DEV__) {
     switch (tag) {
-      case ConcurrentRoot:
+      case ConcurrentRoot: //  并发渲染模式
         this._debugRootType = hydrate ? 'hydrateRoot()' : 'createRoot()';
         break;
-      case LegacyRoot:
+      case LegacyRoot: // 同步渲染模式
         this._debugRootType = hydrate ? 'hydrate()' : 'render()';
         break;
     }

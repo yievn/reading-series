@@ -558,7 +558,25 @@ export function claimNextRetryLane(): Lane {
   }
   return lane;
 }
-
+/**
+ * 在react中，lanes是用二进制位表示的，每个bit代表一个lane，位置越靠右，优先级
+ * 越高（因为数值越小）。
+ * 
+ * lanes & -lanes是一个常见的位操作技巧，用于提取最低位的1（即最高优先级的lane）.
+ * -lanes 是 lanes 的二进制补码表示。补码是通过对原数取反加一得到的。
+ * 
+ * 通过 lanes & -lanes，我们可以提取出 lanes 中最低位的 1。
+ * 这是因为补码的特性：-lanes 会将最低位的 1 保留，而其他位取反。
+ * 
+ * 例如，假设 lanes 是 0b00101000，那么 -lanes 是 0b11011000。按位与操作后，
+ * 结果是 0b00001000，即最低位的 1。
+ * 
+ * getHighestPriorityLane 的作用是从多个 lanes 中选择优先级最高的一个。
+ * 这在调度系统中非常重要，因为它决定了哪个更新应该被优先处理。
+ * 
+ * 在React的调度系统中，优先级是通过二进制位来表示的，
+ * 每个位代表一个不同的优先级。优先级最高的lane被设计为最低位的1
+ */
 export function getHighestPriorityLane(lanes: Lanes): Lane {
   return lanes & -lanes;
 }

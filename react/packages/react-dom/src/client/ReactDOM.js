@@ -178,7 +178,7 @@ export {
   // Disabled behind disableLegacyReactDOMAPIs
   findDOMNode,
   hydrate,
-  render,
+  render,  
   unmountComponentAtNode,
   // exposeConcurrentModeAPIs
   createRoot,
@@ -195,7 +195,7 @@ export {
 // Keep in sync with ReactTestUtils.js.
 // This is an array for better minification.
 Internals.Events = [
-  /**
+  /**  
    * 在事件处理过程中，React需要从触发事件的DOM节点找到对应的React组件实例，以便正确地处理事件
    */
   getInstanceFromNode,

@@ -164,13 +164,28 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
 /**
  * Given a DOM node, return the ReactDOMComponent or ReactDOMTextComponent
  * instance, or null if the node was not rendered by this React.
+ * 
+ * 用于从DOM节点获取react fiber实例的函数。在react的内部实现中，
+ * fiber是用于表示组件树的基本单元。这个函数的作用是帮助在事件处理或
+ * 其他操作中，从一个DOM节点找到与之关联的fiber实例。
  */
 export function getInstanceFromNode(node: Node): Fiber | null {
+  /**
+   * internalInstanceKey 和 internalContainerInstanceKey 是用于存储 Fiber 实例的内部键。
+   * 通过访问这些键，可以获取到与 DOM 节点关联的 Fiber 实例。
+   */
   const inst =
     (node: any)[internalInstanceKey] ||
     (node: any)[internalContainerInstanceKey];
+  /**
+   * 如果找到了实例 inst，则继续进行下一步的检查。
+   */
   if (inst) {
+    // 获取实例的 tag 属性，tag 用于标识 Fiber 的类型。
     const tag = inst.tag;
+    /**
+     * 检查fiber实例的tag是不是HostComponent（DOM元素）、
+     */
     if (
       tag === HostComponent ||
       tag === HostText ||

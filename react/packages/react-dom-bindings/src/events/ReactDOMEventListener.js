@@ -57,18 +57,27 @@ import {isRootDehydrated} from 'react-reconciler/src/ReactFiberShellHydration';
 const {ReactCurrentBatchConfig} = ReactSharedInternals;
 
 // TODO: can we stop exporting these?
+/**
+ * 用于控制事件系统是否启用。初始值为true，可以通过setEnabled函数进行修改
+ */
 let _enabled: boolean = true;
 
 // This is exported in FB builds for use by legacy FB layer infra.
 // We'd like to remove this but it's not clear if this is safe.
+/**
+ * 用于启用或禁用事件系统。通过设置_enabled变量来控制事件系统的状态。
+ */
 export function setEnabled(enabled: ?boolean): void {
   _enabled = !!enabled;
 }
-
+// 返回事件系统当前的启用状态。
 export function isEnabled(): boolean {
   return _enabled;
 }
-
+/**
+ * 创建一个事件监听器包装函数，该函数绑定了事件名称、
+ * 系统标志和目标容器。返回的函数用于调度事件。
+ */
 export function createEventListenerWrapper(
   targetContainer: EventTarget,
   domEventName: DOMEventName,
@@ -81,23 +90,36 @@ export function createEventListenerWrapper(
     targetContainer,
   );
 }
-
+/**
+ * 创建事件监听器包装函数的工具函数。
+ * 它根据事件的优先级来选择合适的事件调度函数，
+ * 以确保事件在适当的优先级下被处理。
+ */
 export function createEventListenerWrapperWithPriority(
   targetContainer: EventTarget,
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
 ): Function {
+  /**
+   * 调用 getEventPriority 函数，根据 domEventName 确定事件的优先级。
+   * 不同的事件类型有不同的优先级，
+   * 例如，点击事件通常是离散事件，滚动事件是连续事件。
+   */
   const eventPriority = getEventPriority(domEventName);
   let listenerWrapper;
   switch (eventPriority) {
+
     case DiscreteEventPriority:
+       // 使用 dispatchDiscreteEvent，用于处理离散事件，这些事件需要快速响应。
       listenerWrapper = dispatchDiscreteEvent;
-      break;
+      break; 
     case ContinuousEventPriority:
+       // dispatchContinuousEvent，用于处理连续事件，这些事件需要持续处理。
       listenerWrapper = dispatchContinuousEvent;
       break;
     case DefaultEventPriority:
     default:
+      // 使用 dispatchEvent，用于处理默认优先级的事件。
       listenerWrapper = dispatchEvent;
       break;
   }
@@ -146,17 +168,44 @@ function dispatchContinuousEvent(
 }
 
 export function dispatchEvent(
-  domEventName: DOMEventName,
+  /**
+   *  DOM 事件的名称（例如 "click", "keydown"）。
+
+   */
+  domEventName: DOMEventName, 
+  /**
+   * 提供关于事件系统状态的附加信息的标志（例如，捕获阶段）。
+   */
   eventSystemFlags: EventSystemFlags,
+  /**
+   * 事件被分发的目标容器。
+
+   */
   targetContainer: EventTarget,
+  /**
+   * 来自浏览器的原生事件对象。
+   */
   nativeEvent: AnyNativeEvent,
 ): void {
+  /**
+   * 函数首先检查事件系统是否通过 _enabled 标志启用。
+   * 如果事件系统被禁用，函数会立即返回，阻止任何进一步的事件处理。
+   */
   if (!_enabled) {
     return;
   }
-
+  /**
+   * 函数尝试使用 findInstanceBlockingEvent 查找可能阻塞事件的实例。
+   * 这对于处理某些组件（如 Suspense）可能需要延迟事件处理的情况非常重要。
+   */
   let blockedOn = findInstanceBlockingEvent(nativeEvent);
+  /**
+   * 如果没有找到阻塞实例（blockedOn 为 null）
+   */
   if (blockedOn === null) {
+    /**
+     * dispatchEventForPluginEventSystem 负责将事件传递给插件事件系统进行处理。
+     */
     dispatchEventForPluginEventSystem(
       domEventName,
       eventSystemFlags,
@@ -164,10 +213,17 @@ export function dispatchEvent(
       return_targetInst,
       targetContainer,
     );
+    /**
+     * 调用 clearIfContinuousEvent 清除连续事件的状态（如果适用），
+     * 然后返回，表示事件处理完成。
+     */
     clearIfContinuousEvent(domEventName, nativeEvent);
     return;
   }
-
+  /**
+   * 如果事件是连续事件（如滚动或拖动），并且有阻塞实例，
+   * 调用 queueIfContinuousEvent 将事件排队。
+   */
   if (
     queueIfContinuousEvent(
       blockedOn,
@@ -177,13 +233,22 @@ export function dispatchEvent(
       nativeEvent,
     )
   ) {
+    // 如果事件被成功排队，调用 nativeEvent.stopPropagation() 阻止事件冒泡，并返回。
     nativeEvent.stopPropagation();
     return;
   }
   // We need to clear only if we didn't queue because
   // queueing is accumulative.
+  /**
+   * clearIfContinuousEvent 清除连续事件的状态。
+   */
   clearIfContinuousEvent(domEventName, nativeEvent);
-
+  /**
+   * eventSystemFlags & IS_CAPTURE_PHASE这个表达式用于检查事件系统标志中是否包含捕获阶段的标志。
+   * 通过使用按位与操作符 &，可以检查 eventSystemFlags 是否包含 IS_CAPTURE_PHASE 标志。这是为了确定当前事件是否处于捕获阶段。
+   * 
+   * isDiscreteEventThatRequiresHydration(domEventName)判断事件是否是需要同步处理的离散事件。
+   */
   if (
     eventSystemFlags & IS_CAPTURE_PHASE &&
     isDiscreteEventThatRequiresHydration(domEventName)

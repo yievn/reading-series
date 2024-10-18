@@ -76,7 +76,7 @@ import {
   waitForCommitToBeReady,
   preloadInstance,
 } from './ReactFiberConfig';
-
+ 
 import {
   createWorkInProgress,
   assignFiberPropertiesInDEV,
@@ -730,13 +730,19 @@ export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
   // 获取Fiber的mode属性
   const mode = fiber.mode;
-  // 如果不是并发渲染模式，返回同步标志
+  // 如果不是并发渲染模式，返回同步lane
   if ((mode & ConcurrentMode) === NoMode) {
     return (SyncLane: Lane);
   } else if (
     (executionContext & RenderContext) !== NoContext &&
     workInProgressRootRenderLanes !== NoLanes
   ) {
+    /**
+     * 如果当前在渲染阶段（RenderContext）并且有正在进行的渲染通道
+     * （workInProgressRootRenderLanes），
+     * 则将更新分配到当前渲染的通道。这种情况在官方上是不被支持的，
+     * 但作为一种后备方案存在。
+     */
     // This is a render phase update. These are not officially supported. The
     // old behavior is to give this the same "thread" (lanes) as
     // whatever is currently rendering. So if you call `setState` on a component
@@ -746,9 +752,13 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     // This behavior is only a fallback. The flag only exists until we can roll
     // out the setState warning, since existing code might accidentally rely on
     // the current behavior.
+    // 
     return pickArbitraryLane(workInProgressRootRenderLanes);
   }
-
+  /**
+   * 检查当前是否在过渡中，如果是，则尝试重用当时异步操作范围内的通道（actionScopeLane）。
+   * 如果没有可用的通过，则请求一个新的过渡通道（requestTransitionLane）
+   */
   const isTransition = requestCurrentTransition() !== NoTransition;
   if (isTransition) {
     if (__DEV__ && ReactCurrentBatchConfig.transition !== null) {
@@ -776,6 +786,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
   // The opaque type returned by the host config is internally a lane, so we can
   // use that directly.
   // TODO: Move this type conversion to the event priority module.
+  // 检查当前更新的优先级（updateLane）。如果有特定的优先级，则返回该优先级。
   const updateLane: Lane = (getCurrentUpdatePriority(): any);
   if (updateLane !== NoLane) {
     return updateLane;
@@ -787,6 +798,9 @@ export function requestUpdateLane(fiber: Fiber): Lane {
   // The opaque type returned by the host config is internally a lane, so we can
   // use that directly.
   // TODO: Move this type conversion to the event priority module.
+  /**
+   * 如果更新源自react之外，则根据事件类型请求适当的优先级（eventLane），并返回该优先级。
+   */
   const eventLane: Lane = (getCurrentEventPriority(): any);
   return eventLane;
 }
@@ -897,7 +911,7 @@ export function scheduleUpdateOnFiber(
     );
   }
 
-  // Mark that the root has a pending update.
+  // Mark that the root has a pending update. 标记这个根节点正在等下更新
   markRootUpdated(root, lane);
 
   if (

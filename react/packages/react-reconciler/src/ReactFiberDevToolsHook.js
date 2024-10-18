@@ -104,14 +104,22 @@ export function injectInternals(internals: Object): boolean {
     return false;
   }
 }
-
+/**
+ * 旨在通知react devTools何时调度了一个新的根节点
+ */
 export function onScheduleRoot(root: FiberRoot, children: ReactNodeList) {
+  /**
+   * 该函数被 __DEV__ 检查包裹，这意味着它仅在开发模式下运行。这是一种常见的做法，确保某些调试或日志功能不会包含在生产构建中。
+   */
   if (__DEV__) {
     if (
       injectedHook &&
       typeof injectedHook.onScheduleFiberRoot === 'function'
     ) {
       try {
+        /**
+         * 函数检查 injectedHook 是否已定义，并且是否具有 onScheduleFiberRoot 方法。这确保了只有在钩子已正确注入并支持所需方法时，函数才尝试调用钩子。
+         */
         injectedHook.onScheduleFiberRoot(rendererID, root, children);
       } catch (err) {
         if (__DEV__ && !hasLoggedError) {

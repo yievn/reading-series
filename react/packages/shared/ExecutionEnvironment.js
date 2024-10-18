@@ -6,7 +6,7 @@
  *
  * @flow
  */
-
+// 判断当前环境中是否可以操作DOM
 export const canUseDOM: boolean = !!(
   typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&

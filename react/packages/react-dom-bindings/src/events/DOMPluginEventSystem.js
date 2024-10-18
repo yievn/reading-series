@@ -495,8 +495,9 @@ function addTrappedEventListener(
     eventSystemFlags,
   );
   // If passive option is not supported, then the event will be
-  // active and not passive.
+  // active and not passive. 用来判断是否为被动监听器，也就是监听addEventListener时，第三个参数传{passive: true}
   let isPassiveListener: void | boolean = undefined;
+  // 表示浏览器addEventListener第三参数是否支持传递对象options，以此设置被动事件
   if (passiveBrowserEventsSupported) {
     // Browsers introduced an intervention, making these events
     // passive by default on document. React doesn't bind them
@@ -504,6 +505,18 @@ function addTrappedEventListener(
     // the performance wins from the change. So we emulate
     // the existing behavior manually on the roots now.
     // https://github.com/facebook/react/issues/19651
+    /**
+     * touchstart和touchmove事件通常用于触摸设备上的滚动操作。wheel事件用于鼠标滚轮
+     * 滚动。这些事件会频繁触发，尤其是在用户快速滚动时。在这些事件的监听器中，开发者可能会
+     * 调用event.preventDefault()来阻止默认的滚动行为。浏览器在触发这些事件时，通常
+     * 会等待事件处理程序执行完毕，以确定是否调用了preventDefault()，从而决定是否进行
+     * 滚动。
+     * 这些等待会导致滚动的延迟，影响用户体验，尤其是在移动设备上。
+     * 
+     * 通过设置passive: true，开发者告诉浏览器，监听器不会调用preventDefault()。
+     * 这使得浏览器可以立即开始滚动，而不需要等待事件处理器执行完毕。
+     * 这种优化减少了滚动的延迟，提高了滚动的流畅性和响应速度。
+     */
     if (
       domEventName === 'touchstart' ||
       domEventName === 'touchmove' ||
@@ -512,7 +525,13 @@ function addTrappedEventListener(
       isPassiveListener = true;
     }
   }
-
+  /**
+   * 这个判断通常用于处理 Facebook 内部的遗留支持模式。
+   * Facebook 内部可能有一些遗留的代码或工具依赖于旧的事件处理模式。
+   * enableLegacyFBSupport 是一个特性标志，用于启用或禁用 Facebook 内部的遗留支持。
+   * isDeferredListenerForLegacyFBSupport 是一个标志，
+   * 用于指示当前的事件监听器是否是为遗留支持而延迟的监听器。
+   */
   targetContainer =
     enableLegacyFBSupport && isDeferredListenerForLegacyFBSupport
       ? (targetContainer: any).ownerDocument
@@ -544,8 +563,11 @@ function addTrappedEventListener(
     };
   }
   // TODO: There are too many combinations here. Consolidate them.
+  // 如果是捕获事件
   if (isCapturePhaseListener) {
+    // 是否启用passive，如果是不启用
     if (isPassiveListener !== undefined) {
+      // 新增被动捕获事件 addEventListener('eventName', listener, { capture: true, passive: true })
       unsubscribeListener = addEventCaptureListenerWithPassiveFlag(
         targetContainer,
         domEventName,
@@ -553,14 +575,16 @@ function addTrappedEventListener(
         isPassiveListener,
       );
     } else {
+      // 新增捕获事件
       unsubscribeListener = addEventCaptureListener(
         targetContainer,
         domEventName,
         listener,
       );
     }
-  } else {
+  } else { // 冒泡事件
     if (isPassiveListener !== undefined) {
+      // 新增冒泡被动事件监听
       unsubscribeListener = addEventBubbleListenerWithPassiveFlag(
         targetContainer,
         domEventName,
@@ -568,6 +592,7 @@ function addTrappedEventListener(
         isPassiveListener,
       );
     } else {
+      // 新增冒泡事件监听
       unsubscribeListener = addEventBubbleListener(
         targetContainer,
         domEventName,

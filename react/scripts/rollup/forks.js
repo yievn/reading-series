@@ -1,5 +1,34 @@
 'use strict';
 
+/**
+ * 该文件的主要作用是定义一个“fork”机制，
+ * 用于在不同的构建环境中选择合适的模块实现。
+ * 这种机制允许React在不同的环境（如Web、React Native、Facebook内部环境等）
+ * 中使用不同的代码路径，以优化性能或解决特定环境中的问题。
+ * 
+ * 具体来说，该文件的作用包括：
+ * 1. 模块替换：定义了一系列模块路径和对应的替换逻辑。
+ * 根据不同的bundleType、entry、dependencies等参数，
+ * 选择合适的模块实现。这种替换可以解决模块间的循环依赖问题，
+ * 或在不同环境中使用不同的实现。
+ * 
+ * 2. 环境适配：通过检查bundleType和entry，
+ * 为不同的环境（如UMD、React Native、Facebook内部环境等）
+ * 提供特定的实现。这种适配可以确保React在
+ * 不同平台上运行时的行为一致性和性能优化。
+ * 
+ * 3. 错误处理：在某些情况下，如果没有找到合适的替换模块，
+ * 文件会抛出错误。这种设计可以防止在构建或运行时使用不正确的模块实现。
+ * 
+ * 4. 配置管理：通过使用inlinedHostConfigs等配置，
+ * 动态决定某些模块的替换逻辑。
+ * 这种配置管理可以使代码库更具灵活性和可扩展性。
+ * 
+ * 总的来说，该文件是React构建系统的一部分，
+ * 负责在不同的构建和运行环境中选择合适的模块实现，
+ * 以确保React的功能和性能在各种环境中都能得到优化。
+ */
+
 const fs = require('node:fs');
 const {bundleTypes, moduleTypes} = require('./bundles');
 const inlinedHostConfigs = require('../shared/inlinedHostConfigs');
