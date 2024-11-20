@@ -1,0 +1,34 @@
+{
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "dev": "pnpm --dir ./packages/vant dev",
+    "lint": "eslint \"./packages/**/{src,test}/**/*.{vue,ts,tsx,js,mjs,cjs}\"",
+    "test": "pnpm --dir ./packages/vant test",
+    "test:watch": "pnpm --dir ./packages/vant test:watch",
+    "test:update": "pnpm --dir ./packages/vant test:update",
+    "test:coverage": "pnpm --dir ./packages/vant test:coverage",
+    "build": "pnpm --dir ./packages/vant build",
+    "build:site": "pnpm --dir ./packages/vant build:site"
+  },
+  "nano-staged": {
+    "*.md": "prettier --write",
+    "*.{ts,tsx,js,vue,less}": "prettier --write",
+    "*.{ts,tsx,js,vue}": "eslint --fix"
+  },
+  "engines": {
+    "pnpm": ">= 9.12.3"
+  },
+  "packageManager": "pnpm@9.12.3",
+  "devDependencies": {
+    "@vant/cli": "workspace:*",
+    "@vant/eslint-config": "workspace:*",
+    "eslint": "^8.57.1",
+    "husky": "^9.1.6",
+    "nano-staged": "^0.8.0",
+    "prettier": "^3.3.3"
+  },
+  "overrides": {
+    "esbuild": "^0.24.0"
+  }
+}
