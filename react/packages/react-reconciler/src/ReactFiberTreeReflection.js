@@ -29,9 +29,22 @@ import {enableFloat} from 'shared/ReactFeatureFlags';
 
 const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 
+/**
+ * 用于查找给定Fiber节点的最近已挂载的Fiber节点的函数，这个函数在
+ * React的内部机制中用于确定一个组件是否已经挂载，或者在Fiber树中找到最近的已挂载节点。
+ * @param {} fiber 
+ * @returns 
+ */
 export function getNearestMountedFiber(fiber: Fiber): null | Fiber {
+  /**
+   * 初始化为传入的 fiber，用于在树中遍历。
+   */
   let node = fiber;
+  /**
+   * 最初设置为传入的 fiber，用于跟踪在遍历过程中找到的最近的已挂载节点。
+   */
   let nearestMounted: null | Fiber = fiber;
+  // 
   if (!fiber.alternate) {
     // If there is no alternate, this might be a new tree that isn't inserted
     // yet. If it is, then it will have a pending insertion effect on it.
@@ -61,18 +74,33 @@ export function getNearestMountedFiber(fiber: Fiber): null | Fiber {
   // that has been unmounted.
   return null;
 }
-
+/**
+ * getSuspenseInstanceFromFiber 的主要功能是从一个 Suspense 
+ * 组件的 Fiber 节点中提取出与之关联的 Suspense 实例
+ */
 export function getSuspenseInstanceFromFiber(
   fiber: Fiber,
 ): null | SuspenseInstance {
+  /**
+   * 首先检查传入的 fiber 是否是一个 SuspenseComponent。如果不是，直接返回 null。
+   */
   if (fiber.tag === SuspenseComponent) {
+    /**
+     * 通过 fiber.memoizedState 
+     * 获取 Suspense 组件的状态节点。这个状态节点通常包含 Suspense 组件的挂起状态信息。
+     */
     let suspenseState: SuspenseState | null = fiber.memoizedState;
+    // 如果没有
     if (suspenseState === null) {
+      //  从
       const current = fiber.alternate;
       if (current !== null) {
         suspenseState = current.memoizedState;
       }
     }
+    /**
+     * 如果 suspenseState 不为 null，这意味着 Suspense 组件当前处于挂起状态。
+     */
     if (suspenseState !== null) {
       return suspenseState.dehydrated;
     }

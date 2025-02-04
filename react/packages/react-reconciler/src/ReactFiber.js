@@ -169,12 +169,42 @@ function FiberNode(
   this.tag = tag;
   /**节点的唯一标识符，用于在组件树的更新过程中进行节点的对比和复用。 */
   this.key = key;
-  /** 表示元素的类型。通常与 type 相同，但在某些情况下（如 React.memo）可能不同。*/
+  /** 
+   * elementType是react元素的原始类型。它通常是从jsx或React.createElement创建的元素中直接获取的。
+   * 主要用于在react内部进行元素类型的比较和判断。
+   * 
+   * 常见类型：
+   * 字符串： 对于原生DOM元素，elementType是一个字符串（如'div'、'span'）
+   * 函数：对于函数组件，elementType是组件函数本身
+   * 类：对于类组件，elementType是组件类本身
+   * 对象：对于其他react特性，如React.memo和React.forwardRef，elementType是这些特性返回的对象
+  */
   this.elementType = null;
-  /**表示元素的类型， 对于 FunctionComponent，指函数本身，
+  /**
+   * type是React在渲染和更新过程中使用的类型，在某些情况下，type会被解析为更具体的类型，以便
+   * React可以正确地处理组件的渲染逻辑。
+   * 
+   * 常见类型：
+   * 
+   * 1、字符串：对于原生DOM元素，elementType是一个字符串（如'div'、'span'）
+   * 2、 对于函数组件，type 是组件函数本身。
+   * 3、类: 对于类组件，type 是组件类本身。
+   * 4、解析后的类型: 对于 React.memo 和 React.forwardRef，type 可能是解析后的组件函数或类。
+   * 
+   * 相同: 在大多数情况下，elementType 和 type 是相同的，尤其是对于普通的函数组件和类组件。
+   * 不同: 在某些高级用例中，如 React.memo 和 React.forwardRef，
+   * elementType 和 type 可能不同。elementType 保留了原始的组件定义，而 type 是解析后的实际类型。
+   * 
+   *   const MemoizedComponent = React.memo(MyComponent);
+   *   const element = <MemoizedComponent />;
+  // elementType 是 MemoizedComponent
+  // type 是 MyComponent
+   * /
+    /**表示元素的类型， 对于 FunctionComponent，指函数本身，
    * 对于ClassComponent，指 class，对于 HostComponent，
    * 指 DOM 节点 tagName */
   this.type = null;
+
   /**FiberNode 对应的真实 DOM 节点或类组件实例。用于在渲染过程中访问和操作实际的 DOM 或组件实例。 */
   this.stateNode = null;
 
@@ -269,8 +299,16 @@ function FiberNode(
    */
   this.childLanes = NoLanes;
   /**
-   * 指向该 FiberNode 的备用（替补）节点。用于实现双缓冲技术，在更新过程中切换当前和备用节点。
-   * Current Tree和Work-in-progress (WIP) Tree的互相指向对方tree里的对应单元
+   * 1、 状态同步：在每次更新时，React会将当前Fiber的状态和属性复制到alternate。这确保了alternate在成为新的
+   * 当前Fiber时，拥有最新的状态。React在更新过程中会确保所有必要的属性和状态都被正确地传递到新的Fiber
+   * 节点。
+   * 2、双缓存机制： 在每次更新时，React会再alternate上准备心的渲染输出。更新完成后，alternate成为
+   * 新的当前Fiber。并将旧的当前Fiber变为新的alternate。
+   * 3、Fiber 树的重建： 在某些情况下，React会选择完全重建Fiber树，以确保所有节点都反映最新的状态。当然，React也支持
+   * 增量更新，只更新发生变化的部分，以提高性能。
+   * 4、错误处理和回退：如果在更新过程中发生错误，React可以回退到旧的Fiber节点。这种机制确保即使
+   * 在错误情况下，应用也能保持稳定。通过保留旧的Fiber节点，React可以在必要时回退到先前的状态。
+   * 
    */
   this.alternate = null;
 

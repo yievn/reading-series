@@ -117,11 +117,21 @@ export {
   useReducer,
   useRef,
   useState,
+  /**
+   * 对外暴露的内置组件，实际上都是符号标志
+   * 
+   * <Fragment></Fragment>被babel编译后是
+   * 
+   * createElement(REACT_FRAGMENT_TYPE, null, null)
+   * 
+   * 此时Fragment的reactElement的type就是REACT_FRAGMENT_TYPE
+   */
   REACT_FRAGMENT_TYPE as Fragment,
   REACT_PROFILER_TYPE as Profiler,
   REACT_STRICT_MODE_TYPE as StrictMode,
   REACT_DEBUG_TRACING_MODE_TYPE as unstable_DebugTracingMode,
   REACT_SUSPENSE_TYPE as Suspense,
+  // ------------------
   createElement,
   cloneElement,
   isValidElement,

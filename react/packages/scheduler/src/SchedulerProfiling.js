@@ -167,7 +167,7 @@ export function markSchedulerSuspended(ms: number) {
     if (eventLog !== null) {
       logEvent([SchedulerSuspendEvent, ms * 1000, mainThreadIdCounter]);
     }
-  }
+  } 
 }
 
 export function markSchedulerUnsuspended(ms: number) {

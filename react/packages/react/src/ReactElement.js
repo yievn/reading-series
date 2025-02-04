@@ -144,13 +144,51 @@ function warnIfStringRefCannotBeAutoConverted(config) {
  * @param {*} source An annotation object (added by a transpiler or otherwise)
  * indicating filename, line number, and/or other information.
  * @internal
+ * 
+ * ReactElement是React的核心概念之一，它用于描述UI的结构。每个React组件在渲染时都会生成一个或多个
+ * ReactElement，这些元素是React用来构建和更新用户界面的基础。
+ * 
+ *  ReactElement 是一个简单的 JavaScript 对象，
+ * 用于描述 UI 的结构。它包含了组件的类型、属性、子元素等信息。
+ * 
+ * ReactElement 是不可变的。一旦创建，就不能被修改。这种不可变性有助于提高性能和简化调试。
  */
 function ReactElement(type, key, ref, self, source, owner, props) {
   const element = {
     // This tag allows us to uniquely identify this as a React Element
+    /**
+     * $$typeof是一个特殊的属性，用于表示一个对象是ReactElement。在 React 的内部实现中，
+     * $$typeof 用于快速检查对象类型，确保它是一个 React 元素而不是其他类型的对象。
+     * 
+     * 由于 $$typeof 是一个符号，它提供了一种防止对象被伪造为 ReactElement 
+     * 的机制。只有 React 内部创建的对象才会有正确的 $$typeof 值。
+     * 
+     * 
+     */
     $$typeof: REACT_ELEMENT_TYPE,
 
     // Built-in properties that belong on the element
+    /**
+     * type 决定了 ReactElement 所表示的元素类型。
+     * 在渲染过程中，React 使用 type 来确定如何处理和渲染该元素。
+     * 对于自定义组件，type 是组件的定义（函数或类），React 使用它来实例化和渲染组件。
+     * 
+     * 常见类型：
+     * 字符串: 对于原生 DOM 元素，type 是一个字符串（如 'div', 'span'）。
+     * 函数: 对于函数组件，type 是组件函数本身。
+     * 类: 对于类组件，type 是组件类本身。
+     * React 特性: 对于 React 内置特性，如 React.Fragment，type 是这些特性的标识符。
+     * 
+     * $$typeof 用于标识对象是一个 ReactElement，而 type 用于描述该元素的具体类型。
+     * 在 React 的渲染过程中，$$typeof 确保对象是一个合法的 React 元素，而 type 决定了如何渲染该元素。
+     * 
+     * const MemoCompos = React.memo(App)
+     * 
+     * {
+     *  $$typeof: REACT_MEMO_TYPE,
+     *  type: App
+     * }
+     */
     type: type,
     key: key,
     ref: ref,

@@ -13,13 +13,24 @@ import {TEXT_NODE} from '../client/HTMLNodeType';
  *
  * @param {object} nativeEvent Native browser event.
  * @return {DOMEventTarget} Target node.
+ * 
+ * 用于获取事件目标节点函数，它在处理浏览器事件时，帮助解决不同浏览器之间的兼容性问题。
  */
 function getEventTarget(nativeEvent) {
   // Fallback to nativeEvent.srcElement for IE9
   // https://github.com/facebook/react/issues/12506
+  /**
+   * nativeEvent.target 是标准的 DOM 事件属性，表示事件的目标节点。
+   * nativeEvent.srcElement 是早期版本的 Internet Explorer 使用的属性，与 target 类似。
+   * 如果 target 和 srcElement 都不可用，默认使用 window 作为目标。
+   */
   let target = nativeEvent.target || nativeEvent.srcElement || window;
 
   // Normalize SVG <use> element events #4963
+  /**
+   * 这个判断用于处理SVG中的<use>元素。在某些浏览器中，
+   * 事件可能会触发在<use>元素上，而不是实际的目标元素
+   */
   if (target.correspondingUseElement) {
     target = target.correspondingUseElement;
   }

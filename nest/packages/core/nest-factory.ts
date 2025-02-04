@@ -256,7 +256,7 @@ export class NestFactoryStatic {
       this.handleInitializationError(e);
     }
   }
-
+ 
   private handleInitializationError(err: unknown) {
     if (this.abortOnError) {
       process.abort();

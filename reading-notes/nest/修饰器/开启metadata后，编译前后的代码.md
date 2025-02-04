@@ -1,5 +1,6 @@
 编译前：
-``` Typescript
+
+```Typescript
 import {
   Controller,
   Get,
@@ -65,14 +66,21 @@ export class ChromeController {
 }
 
 ```
+
 编译后：
 
-``` JavaScript
+```JavaScript
 "use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    var c = arguments.length,
+    r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc,
+    d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function")
+        r = Reflect.decorate(decorators, target, key, desc);
+    else
+        for (var i = decorators.length - 1; i >= 0; i--)
+            if (d = decorators[i])
+                r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 var __metadata = (this && this.__metadata) || function (k, v) {
@@ -124,6 +132,7 @@ exports.ChromeController = ChromeController;
 ChromeController.prop1 = 2;
 /**
  * 属性的元数据只有design:type，值为属性的类型，当没有明确指定类型时，会被统一推断为Object
+ * 如果ts类型指定为number，那么design:type会为Number
  */
 __decorate([
     propertyDec(),
@@ -194,9 +203,9 @@ exports.ChromeController = ChromeController = __decorate([
 //# sourceMappingURL=chrome.controller.js.map
 ```
 
-这里也许有个疑问，为啥prop和prop1已经被赋值为数字1了，为啥在编译后的元数据design:type中被推断为Object，Typescript本身具备类型推断，那么它们的类型也应该是1和2，怎么也不应该为OBject，这是为啥呢？
+这里也许有个疑问，为啥 prop 和 prop1 已经被赋值为数字 1 了，为啥在编译后的元数据 design:type 中被推断为 Object，Typescript 本身具备类型推断，那么它们的类型也应该是 1 和 2，怎么也不应该为 OBject，这是为啥呢？
 
-实际上，Typescript确实会自动推断变量的类型，但是当涉及到装饰器和元数据反射时，情况却有所不同。元数据反射通常需要显示的类型注解来正确的推断和存储元数据。如果没有显示的类型注解，Typescript编译器默认会将属性的类型视为Object。这是因为装饰器的设计初衷是与类型系统松耦合，主要用于运行时的行为，而不仅仅是在编译时进行类型检查。
+实际上，Typescript 确实会自动推断变量的类型，但是当涉及到装饰器和元数据反射时，情况却有所不同。元数据反射通常需要显示的类型注解来正确的推断和存储元数据。如果没有显示的类型注解，Typescript 编译器默认会将属性的类型视为 Object。这是因为装饰器的设计初衷是与类型系统松耦合，主要用于运行时的行为，而不仅仅是在编译时进行类型检查。
 
-因此，即使从复制1和2可以推断出他们是number类型，但在使用装饰器和元数据时，如果没有显示指定类型，编译器还是会将
-类型设为Object。这是为了保证元数据能够在运行时正确描述属性，特别是在涉及到依赖注入或其他框架特性时，这种明确的类型标注变得尤为重要。
+因此，即使从复制 1 和 2 可以推断出他们是 number 类型，但在使用装饰器和元数据时，如果没有显示指定类型，编译器还是会将
+类型设为 Object。这是为了保证元数据能够在运行时正确描述属性，特别是在涉及到依赖注入或其他框架特性时，这种明确的类型标注变得尤为重要。

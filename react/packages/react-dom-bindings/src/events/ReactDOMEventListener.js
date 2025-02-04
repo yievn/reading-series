@@ -195,8 +195,17 @@ export function dispatchEvent(
     return;
   }
   /**
-   * 函数尝试使用 findInstanceBlockingEvent 查找可能阻塞事件的实例。
-   * 这对于处理某些组件（如 Suspense）可能需要延迟事件处理的情况非常重要。
+   * findInstanceBlockingEvent函数用于识别可能阻塞时间处理的React实例，其主要目的
+   * 是确保在处理事件时，能够正确地管理异步渲染和Suspense组件的状态。
+   * 
+   * 1、处理异步渲染：React18引入了并发模式，允许组件异步渲染，这意味着某些组件可能在事件触发时尚未完全
+   * 渲染。而findInstanceBlockingEvent可以识别哪些组件正在异步渲染，从而决定是否需要延迟事件处理，直到
+   * 这些组件完成渲染。
+   * 2、管理Suspense组件：Suspense允许组件再数据加载时挂起，挂起的组件可能会阻塞某些事件的处理，通过识别
+   * 阻塞的Suspense实例，React可以将事件排队，等待组件完成挂起状态后再处理；
+   * 3、
+   * 
+   * 
    */
   let blockedOn = findInstanceBlockingEvent(nativeEvent);
   /**
@@ -254,6 +263,7 @@ export function dispatchEvent(
     isDiscreteEventThatRequiresHydration(domEventName)
   ) {
     while (blockedOn !== null) {
+      // 获取fiber节点
       const fiber = getInstanceFromNode(blockedOn);
       if (fiber !== null) {
         attemptSynchronousHydration(fiber);
@@ -293,7 +303,9 @@ export function dispatchEvent(
 export function findInstanceBlockingEvent(
   nativeEvent: AnyNativeEvent,
 ): null | Container | SuspenseInstance {
+  // 获取事件目标几点
   const nativeEventTarget = getEventTarget(nativeEvent);
+  // 
   return findInstanceBlockingTarget(nativeEventTarget);
 }
 
@@ -301,29 +313,43 @@ export let return_targetInst: null | Fiber = null;
 
 // Returns a SuspenseInstance or Container if it's blocked.
 // The return_targetInst field above is conceptually part of the return value.
+/**
+ * 找到可能阻塞事件处理的React实例
+ * @param {} targetNode targetNode 是事件目标节点
+ * @returns 返回一个 Container 或 SuspenseInstance，如果没有阻塞则返回 null。
+ */
 export function findInstanceBlockingTarget(
   targetNode: Node,
 ): null | Container | SuspenseInstance {
   // TODO: Warn if _enabled is false.
-
+  /**
+   * 初始化 return_targetInst 为 null。这个变量用于存储找到的目标实例。
+   */
   return_targetInst = null;
-
+  /**
+   * 调用此函数以获取与 targetNode 最近的 React 实例。
+   */
   let targetInst = getClosestInstanceFromNode(targetNode);
-
+  // targetInst存在
   if (targetInst !== null) {
+    // 获取 targetInst 的最近已挂载的 Fiber 节点。
     const nearestMounted = getNearestMountedFiber(targetInst);
     if (nearestMounted === null) {
+      // 如果 nearestMounted 为 null，表示该树已经被卸载
       // This tree has been unmounted already. Dispatch without a target.
       targetInst = null;
     } else {
       const tag = nearestMounted.tag;
+      // 检查 nearestMounted 的标签是否为 SuspenseComponent。
       if (tag === SuspenseComponent) {
+        // 获取 SuspenseComponent 的实例。
         const instance = getSuspenseInstanceFromFiber(nearestMounted);
         if (instance !== null) {
           // Queue the event to be replayed later. Abort dispatching since we
           // don't want this event dispatched twice through the event system.
           // TODO: If this is the first discrete event in the queue. Schedule an increased
           // priority for this boundary.
+          // 返回该实例，表示事件需要排队等待重放。
           return instance;
         }
         // This shouldn't happen, something went wrong but to avoid blocking
@@ -331,6 +357,9 @@ export function findInstanceBlockingTarget(
         // TODO: Warn.
         targetInst = null;
       } else if (tag === HostRoot) {
+        /**
+         * 如果 tag 是 HostRoot，检查根是否已脱水（isRootDehydrated(root)），如果是，则返回容器。
+         */
         const root: FiberRoot = nearestMounted.stateNode;
         if (isRootDehydrated(root)) {
           // If this happens during a replay something went wrong and it might block

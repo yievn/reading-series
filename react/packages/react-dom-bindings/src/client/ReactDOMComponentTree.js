@@ -85,43 +85,63 @@ export function isContainerMarkedAsRoot(node: Container): boolean {
 // pass the Container node as the targetNode, you will not actually get the
 // HostRoot back. To get to the HostRoot, you need to pass a child of it.
 // The same thing applies to Suspense boundaries.
+/**
+ * 
+ * @param {*} targetNode 
+ * @returns 
+ * 从给定的DOM节点中找到最近的React Fiber实例的函数。帮助确定事件目标与React组件树的关系。
+ */
 export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
+  // 尝试从 targetNode 获取直接关联的 React Fiber 实例。
   let targetInst = (targetNode: any)[internalInstanceKey];
+  // 如果 targetInst 存在，直接返回它。
   if (targetInst) {
     // Don't return HostRoot or SuspenseComponent here.
     return targetInst;
   }
   // If the direct event target isn't a React owned DOM node, we need to look
   // to see if one of its parents is a React owned DOM node.
+  /**
+   * React使用Fiber数据结构来表示组件树。每个DOM节点通常与一个Fiber实例相关联。Fiber树与DOM树并不总是
+   * 一一对应，因为Fiber树可能包含一些抽象的组件节点（Suspense）或为挂载的节点。
+   * 
+   * React事件系统需要知道事件目标与React组件树的关系，以便正确地处理事件。
+   * 事件可能会再非React管理的节点上触发，因此需要向上遍历DOM树以找到最近的React管理节点。
+   * 
+   * 1、防护力非React节点：事件可能会再非React管理的节点上触发，
+   * 因此需要向上遍历DOM树以找到最近的React管理节点。
+   * 2、处理脱水节点：在服务器端渲染和Suspense组件的场景中，某些节点可能是脱水的。这些节点在初始化加载时没有
+   * 与React Fiber实例相关联，因此需要向上查找以找到关联的Fiber实例。
+   * 3、确保正确的Fiber实例：直接事件目标可能没有关联的Fiber实例，或者关联的实例不完整（例如，未挂载）。
+   * 向上遍历可以确保找到一个已挂载的、完整的Fiber实例。
+   * 4、处理嵌套结构：在复杂的组件结构中，某些组件可能嵌套在其他组件中
+   */
   let parentNode = targetNode.parentNode;
   while (parentNode) {
-    // We'll check if this is a container root that could include
-    // React nodes in the future. We need to check this first because
-    // if we're a child of a dehydrated container, we need to first
-    // find that inner container before moving on to finding the parent
-    // instance. Note that we don't check this field on  the targetNode
-    // itself because the fibers are conceptually between the container
-    // node and the first child. It isn't surrounding the container node.
-    // If it's not a container, we check if it's an instance.
+    /**
+     * 我们将检查这是否是一个将来可能包含 React 节点的容器根。
+     * 我们需要首先检查这一点，因为如果我们是一个脱水容器的子节点，
+     * 我们需要先找到那个内部容器，然后再继续寻找父实例。
+     * 注意，我们不会在 targetNode 本身上检查这个字段，因为在概念上，
+     * Fiber 是在容器节点和第一个子节点之间的。它并不包围容器节点。
+     * 如果它不是一个容器，我们会检查它是否是一个实例。
+     */
     targetInst =
       (parentNode: any)[internalContainerInstanceKey] ||
       (parentNode: any)[internalInstanceKey];
+    // 如果有
     if (targetInst) {
-      // Since this wasn't the direct target of the event, we might have
-      // stepped past dehydrated DOM nodes to get here. However they could
-      // also have been non-React nodes. We need to answer which one.
-
-      // If we the instance doesn't have any children, then there can't be
-      // a nested suspense boundary within it. So we can use this as a fast
-      // bailout. Most of the time, when people add non-React children to
-      // the tree, it is using a ref to a child-less DOM node.
-      // Normally we'd only need to check one of the fibers because if it
-      // has ever gone from having children to deleting them or vice versa
-      // it would have deleted the dehydrated boundary nested inside already.
-      // However, since the HostRoot starts out with an alternate it might
-      // have one on the alternate so we need to check in case this was a
-      // root.
+      /**
+       * 由于这不是事件的直接目标，我们可能已经越过了脱水的 DOM 节点到达这里。然而，
+       * 它们也可能是非 React 节点。我们需要确定是哪一种。
+       * 如果实例没有任何子节点，那么其中不可能有嵌套的 Suspense 边界。因此，我们可以快速退出。
+       * 大多数情况下，当人们向树中添加非 React 子节点时，是通过引用一个没有子节点的 DOM 
+       * 节点来实现的。通常，我们只需要检查其中一个 Fiber，因为如果它曾经有过子节点并删除了它们，
+       * 或者反之亦然，它会删除已经嵌套在其中的脱水边界。然而，由于 HostRoot 
+       * 从一开始就有一个备用节点，因此可能在备用节点上有一个，所以我们需要检查以防这是一个根节点。
+       */
       const alternate = targetInst.alternate;
+      // 查看备用Fiber中书否有子节点，如果有，那么子节点中可能存在嵌套的Suspense
       if (
         targetInst.child !== null ||
         (alternate !== null && alternate.child !== null)

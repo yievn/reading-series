@@ -329,6 +329,7 @@ export function toRefs<T extends object>(object: T): ToRefs<T> {
   if (__DEV__ && !isProxy(object)) {
     console.warn(`toRefs() expects a reactive object but received a plain one.`)
   }
+  // 如果是数组，创建一个对应长度的数组，不是的话创建一个空对象
   const ret: any = isArray(object) ? new Array(object.length) : {}
   for (const key in object) {
     ret[key] = propertyToRef(object, key)

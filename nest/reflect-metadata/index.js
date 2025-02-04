@@ -3,8 +3,11 @@ var Reflect;
     // Metadata Proposal
     // https://rbuckton.github.io/reflect-metadata/
     (function (factory) {
+        // nodejs下是global
         var root = typeof global === "object" ? global :
+        // web worker 中是self
             typeof self === "object" ? self :
+            // 非严格模式下this为window
                 typeof this === "object" ? this :
                     Function("return this;")();
         var exporter = makeExporter(Reflect);
@@ -26,7 +29,7 @@ var Reflect;
                     previous(key, value);
             };
         }
-    })(function (exporter) {
+    })(function (exporter) { 
         var hasOwn = Object.prototype.hasOwnProperty;
         // feature test for Symbol support
         // 是否支持Symbol特性
@@ -628,7 +631,7 @@ var Reflect;
          *             ...
          *          },
          *          [P2]: { ... }
-         *      }
+         *      } 
          *   }
          * }
          * 
@@ -655,8 +658,8 @@ var Reflect;
                 if (!Create)
                     return undefined;
                 metadataMap = new _Map();
-                targetMetadata.set(P, metadataMap);
-            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     .set(P, metadataMap);
+            }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
             return metadataMap;
         }
         // 3.1.1.1 OrdinaryHasMetadata(MetadataKey, O, P)
@@ -693,7 +696,7 @@ var Reflect;
         }
         // 获取在指定对象上属性的元数据
         function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
-            var metadataMap = GetOrCreateMetadataMap(O, P, /*Create*/ false);
+            var metadataMap =  (O, P, /*Create*/ false);
             if (IsUndefined(metadataMap))
                 return undefined;
             return metadataMap.get(MetadataKey);
@@ -1188,7 +1191,8 @@ var Reflect;
                 }
                 return target[rootKey];
             }
-            // 填充随机数字节数组
+            // Math.random() * 0xff | 0 表示将Math.random()的结果乘以255，得到0到255之间的浮点数， | 0是位运算
+            // 中的按位或操作，当与0进行按位或时，会强制将浮点数转换为32位整数，相当于去掉小数部分。
             function FillRandomBytes(buffer, size) {
                 for (var i = 0; i < size; ++i)
                     buffer[i] = Math.random() * 0xff | 0;
@@ -1207,6 +1211,20 @@ var Reflect;
             function CreateUUID() {
                 var data = GenRandomBytes(UUID_SIZE);
                 // mark as random - RFC 4122 § 4.4
+                /**
+                 * 在 UUID v4 标准中，版本号是由第7个字节的高4位决定的。让我们仔细分析这个操作:
+                 * 0x4f = 0100 1111 (掩码)
+                 * 0x40 = 0100 0000 (版本4标记)
+                 * 
+                 * 假设 data[6] 是任意值，比如 1011 0111:
+                 * 首先进行 & 0x4f 操作，得到结果1   0000 0111
+                 * 这一步清除了高4位中的其他位，只保留了第6位的0
+                 * 
+                 * 然后进行 | 0x40 操作，得到结果2 0100 0111
+                 * 最终结果的高4位是 0100，这个 4 就是 UUID 的版本号
+                 * 
+                 * 以虽然最终的二进制结果不是4，但是这个操作确保了 UUID 字符串中表示版本的那一位一定是4，这就标识了这是一个版本4的 UUID（随机生成的 UUID）。
+                 */
                 data[6] = data[6] & 0x4f | 0x40;
                 data[8] = data[8] & 0xbf | 0x80;
                 var result = "";
@@ -1227,6 +1245,18 @@ var Reflect;
          * 然后使用 delete obj.__ 删除这个属性，
          * 实际上是在清除对象 obj 上的任何属性，
          * 使obj成为一个字典对象
+         * 
+         * 在V8引擎中，对象有两种主要的存储模式：
+         * 快速模式：使用线性数组存储属性，属性顺序固定，访问速度快，适合属性数量固定的对象
+         * 字典模式：使用哈希表存储属性，属性顺序不固定，适合频繁增删属性的场景，访问速度相对较慢。
+         * 
+         * 触发字典模式的情况：
+         * 1、频繁添加删除属性
+         * 2、使用delete操作符
+         * 3、添加大量动态属性
+         * 
+         * 如下面的 MakeDictionary，新增一个属性，又删除一个属性，触发obj转换为字典对象
+         * 
          */
         function MakeDictionary(obj) {
             obj.__ = undefined;

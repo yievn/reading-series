@@ -629,13 +629,21 @@ function isMatchingRootContainer(
       grandContainer.parentNode === targetContainer)
   );
 }
-
+/**
+ * 用于处理事件系统的一个函数，它的主要作用是根据事件的类型和目标，调度和分发事件给合适的事件
+ * 处理器。
+ * 
+ * 主要作用有以下：
+ * 事件分发：将原生DOM事件分发给React的事件处理器
+ * 事件合成：将原生事件转换为React的合成事件
+ * 事件调度：根据事件的类型和目标，调度事件给合适的处理器
+ */
 export function dispatchEventForPluginEventSystem(
-  domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
-  nativeEvent: AnyNativeEvent,
-  targetInst: null | Fiber,
-  targetContainer: EventTarget,
+  domEventName: DOMEventName, // 事件名称
+  eventSystemFlags: EventSystemFlags, // 事件标志
+  nativeEvent: AnyNativeEvent, // 原生事件对象
+  targetInst: null | Fiber, // 目标实例
+  targetContainer: EventTarget, // 目标容器
 ): void {
   let ancestorInst = targetInst;
   if (
@@ -674,7 +682,11 @@ export function dispatchEventForPluginEventSystem(
       // If we find that "rootContainer", we find the parent fiber
       // sub-tree for that root and make that our ancestor instance.
       let node: null | Fiber = targetInst;
-
+      /**
+       * 在 mainLoop: while (true) 的上下文中，mainLoop 是用于命名 while 循环的标签。
+       * 这在有嵌套循环或需要提供代码清晰度时特别有用。
+       * 如果没有嵌套循环或特定原因使用标签，它可能只是为了代码的可读性或为将来的代码结构做准备。
+       */
       mainLoop: while (true) {
         if (node === null) {
           return;
